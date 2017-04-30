@@ -1,0 +1,25 @@
+package com.branes.partysync.helper;
+
+import java.util.Observable;
+
+/**
+ * Copyright (c) 2017 Mihai Branescu
+ */
+
+public class ObjectObserver  extends Observable {
+    private static ObjectObserver instance = new ObjectObserver();
+
+    public static ObjectObserver getInstance() {
+        return instance;
+    }
+
+    private ObjectObserver() {
+    }
+
+    public void updateValue(Object data) {
+        synchronized (this) {
+            setChanged();
+            notifyObservers(data);
+        }
+    }
+}
