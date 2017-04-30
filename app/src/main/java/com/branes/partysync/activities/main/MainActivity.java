@@ -38,8 +38,8 @@ public class MainActivity extends AppCompatActivity implements MainContract.View
     private boolean serviceRegistrationStatus = false;
     private boolean serviceDiscoveryStatus = false;
 
-    private ArrayList<NetworkService> discoveredServices = null;
-    private ArrayList<NetworkService> conversations = null;
+    private ArrayList<NetworkService> discoveredServices    ;
+    private ArrayList<NetworkService> conversations;
 
     private Handler handler = null;
 
@@ -51,6 +51,9 @@ public class MainActivity extends AppCompatActivity implements MainContract.View
 
         setHandler(new Handler());
         setNetworkServiceDiscoveryOperations(new NetworkServiceDiscoveryOperations(this));
+
+        discoveredServices = new ArrayList<>();
+        conversations = new ArrayList<>();
 
         presenter = new MainPresenter(this);
         ObjectObserver.getInstance().addObserver(this);
