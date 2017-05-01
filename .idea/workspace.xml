@@ -12,13 +12,6 @@
   <component name="ChangeListManager">
     <list default="true" id="15b4a560-5dc0-4573-b391-096fd9411d1c" name="Default" comment="">
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/app/src/main/java/com/branes/partysync/activities/main/MainActivity.java" afterPath="$PROJECT_DIR$/app/src/main/java/com/branes/partysync/activities/main/MainActivity.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/app/src/main/java/com/branes/partysync/helper/Constants.java" afterPath="$PROJECT_DIR$/app/src/main/java/com/branes/partysync/helper/Constants.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/app/src/main/java/com/branes/partysync/helper/GalleryJobScheduler.java" afterPath="$PROJECT_DIR$/app/src/main/java/com/branes/partysync/helper/GalleryJobScheduler.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/app/src/main/java/com/branes/partysync/helper/Utilities.java" afterPath="$PROJECT_DIR$/app/src/main/java/com/branes/partysync/helper/Utilities.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/app/src/main/java/com/branes/partysync/network_communication/ChatClient.java" afterPath="$PROJECT_DIR$/app/src/main/java/com/branes/partysync/network_communication/ChatClient.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/app/src/main/java/com/branes/partysync/network_communication/ChatServer.java" afterPath="$PROJECT_DIR$/app/src/main/java/com/branes/partysync/network_communication/ChatServer.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/app/src/main/java/com/branes/partysync/network_communication/NetworkServiceDiscoveryOperations.java" afterPath="$PROJECT_DIR$/app/src/main/java/com/branes/partysync/network_communication/NetworkServiceDiscoveryOperations.java" />
     </list>
     <ignored path="PartySync.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -2322,7 +2315,14 @@
       <option name="project" value="LOCAL" />
       <updated>1493553146495</updated>
     </task>
-    <option name="localTasksCounter" value="2" />
+    <task id="LOCAL-00002" summary="removed unused code, decoupled some code">
+      <created>1493636268792</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1493636268792</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
     <servers />
   </component>
   <component name="ToolWindowManager">
@@ -2410,7 +2410,8 @@
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="init arraylist discovered services" />
-    <option name="LAST_COMMIT_MESSAGE" value="init arraylist discovered services" />
+    <MESSAGE value="removed unused code, decoupled some code" />
+    <option name="LAST_COMMIT_MESSAGE" value="removed unused code, decoupled some code" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
