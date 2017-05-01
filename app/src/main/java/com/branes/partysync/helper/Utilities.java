@@ -13,11 +13,13 @@ import java.util.Random;
 
 public class Utilities {
 
+    private static final String TAG = Utilities.class.getName();
+
     public static BufferedReader getReader(Socket socket) {
         try {
             return new BufferedReader(new InputStreamReader(socket.getInputStream()));
         } catch (IOException ioException) {
-            Log.e(Constants.TAG, "An exception has occured: " + ioException.getMessage());
+            Log.e(TAG, "An exception has occured: " + ioException.getMessage());
             if (Constants.DEBUG) {
                 ioException.printStackTrace();
             }
@@ -29,7 +31,7 @@ public class Utilities {
         try {
             return new PrintWriter(new BufferedOutputStream(socket.getOutputStream()));
         } catch (IOException ioException) {
-            Log.e(Constants.TAG, "An exception has occured: " + ioException.getMessage());
+            Log.e(TAG, "An exception has occured: " + ioException.getMessage());
             if (Constants.DEBUG) {
                 ioException.printStackTrace();
             }
@@ -41,7 +43,7 @@ public class Utilities {
         try {
             return new BufferedInputStream(socket.getInputStream());
         } catch (IOException ioException) {
-            Log.e(Constants.TAG, "An exception has occured: " + ioException.getMessage());
+            Log.e(TAG, "An exception has occured: " + ioException.getMessage());
             if (Constants.DEBUG) {
                 ioException.printStackTrace();
             }
@@ -53,7 +55,7 @@ public class Utilities {
         try {
             return new BufferedOutputStream(socket.getOutputStream());
         } catch (IOException ioException) {
-            Log.e(Constants.TAG, "An exception has occured: " + ioException.getMessage());
+            Log.e(TAG, "An exception has occured: " + ioException.getMessage());
             if (Constants.DEBUG) {
                 ioException.printStackTrace();
             }

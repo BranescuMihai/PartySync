@@ -7,7 +7,7 @@ import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
-import android.os.Handler;
+import android.os.PersistableBundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
@@ -35,13 +35,8 @@ public class MainActivity extends AppCompatActivity implements MainContract.View
     private MainContract.Presenter presenter;
     private NetworkServiceDiscoveryOperations networkServiceDiscoveryOperations = null;
 
-    private boolean serviceRegistrationStatus = false;
-    private boolean serviceDiscoveryStatus = false;
-
-    private ArrayList<NetworkService> discoveredServices    ;
+    private ArrayList<NetworkService> discoveredServices;
     private ArrayList<NetworkService> conversations;
-
-    private Handler handler = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -49,7 +44,6 @@ public class MainActivity extends AppCompatActivity implements MainContract.View
         setContentView(R.layout.activity_main);
         changeSyncStateButton = (TextView) findViewById(R.id.change_sync_state_button);
 
-        setHandler(new Handler());
         setNetworkServiceDiscoveryOperations(new NetworkServiceDiscoveryOperations(this));
 
         discoveredServices = new ArrayList<>();
@@ -57,7 +51,24 @@ public class MainActivity extends AppCompatActivity implements MainContract.View
 
         presenter = new MainPresenter(this);
         ObjectObserver.getInstance().addObserver(this);
+    }
 
+    @Override
+    public void onSaveInstanceState(Bundle outState, PersistableBundle outPersistentState) {
+        if (isSyncStarted()) {
+            outState.putBoolean(Constants.SYNC_STATUS, true);
+        } else {
+            outState.putBoolean(Constants.SYNC_STATUS, false);
+        }
+        super.onSaveInstanceState(outState, outPersistentState);
+    }
+
+    @Override
+    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+        if (savedInstanceState.getBoolean(Constants.SYNC_STATUS)) {
+            checkPermission();
+        }
     }
 
     @Override
@@ -66,29 +77,11 @@ public class MainActivity extends AppCompatActivity implements MainContract.View
     }
 
     public void syncButtonClicked(View view) throws Exception {
-        if (changeSyncStateButton.getText().toString().equals(getResources().getString(R.string.start_sync))) {
+        if (isSyncStarted()) {
             checkPermission();
         } else {
-            presenter.stopJobScheduler();
-            networkServiceDiscoveryOperations.unregisterNetworkService();
-            networkServiceDiscoveryOperations.stopNetworkServiceDiscovery();
-            setServiceDiscoveryStatus(false);
-            setServiceRegistrationStatus(false);
-            changeSyncStateButton.setText(getResources().getString(R.string.start_sync));
+            stopServices();
         }
-    }
-
-    private void startServices() {
-        presenter.startJobScheduler();
-        try {
-            networkServiceDiscoveryOperations.registerNetworkService(new Random().nextInt(100) + 2000);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        networkServiceDiscoveryOperations.startNetworkServiceDiscovery();
-        setServiceDiscoveryStatus(true);
-        setServiceRegistrationStatus(true);
-        changeSyncStateButton.setText(getResources().getString(R.string.stop_sync));
     }
 
     public void galleryButtonClicked(View view) {
@@ -98,56 +91,32 @@ public class MainActivity extends AppCompatActivity implements MainContract.View
         startActivity(Intent.createChooser(intent, "Open folder"));
     }
 
-    public Handler getHandler() {
-        return handler;
-    }
-
-    public void setHandler(Handler handler) {
-        this.handler = handler;
-    }
-
-    public NetworkServiceDiscoveryOperations getNetworkServiceDiscoveryOperations() {
-        return networkServiceDiscoveryOperations;
-    }
-
     public void setNetworkServiceDiscoveryOperations(NetworkServiceDiscoveryOperations networkServiceDiscoveryOperations) {
         this.networkServiceDiscoveryOperations = networkServiceDiscoveryOperations;
-    }
-
-    public boolean getServiceRegistrationStatus() {
-        return serviceRegistrationStatus;
-    }
-
-    public void setServiceRegistrationStatus(boolean serviceRegistrationStatus) {
-        this.serviceRegistrationStatus = serviceRegistrationStatus;
-    }
-
-    public boolean getServiceDiscoveryStatus() {
-        return serviceDiscoveryStatus;
-    }
-
-    public void setServiceDiscoveryStatus(boolean serviceDiscoveryStatus) {
-        this.serviceDiscoveryStatus = serviceDiscoveryStatus;
     }
 
     public ArrayList<NetworkService> getDiscoveredServices() {
         return discoveredServices;
     }
 
-    public void setConversations(final ArrayList<NetworkService> conversations) {
-        this.conversations = conversations;
+    public void setDiscoveredServices(ArrayList<NetworkService> discoveredServices) {
+        this.discoveredServices = discoveredServices;
     }
 
     public ArrayList<NetworkService> getConversations() {
         return conversations;
     }
 
+    public void setConversations(ArrayList<NetworkService> conversations) {
+        this.conversations = conversations;
+    }
+
     @Override
     public void update(Observable o, Object arg) {
         Log.d(TAG, arg.toString());
 
-        for(int i = 0; i < networkServiceDiscoveryOperations.getCommunicationToServers().size(); i++) {
-            networkServiceDiscoveryOperations.getCommunicationToServers().get(i).sendMessage((byte[])arg);
+        for (int i = 0; i < networkServiceDiscoveryOperations.getCommunicationToServers().size(); i++) {
+            networkServiceDiscoveryOperations.getCommunicationToServers().get(i).sendImage((byte[]) arg);
         }
     }
 
@@ -166,7 +135,7 @@ public class MainActivity extends AppCompatActivity implements MainContract.View
         }
     }
 
-    private void checkPermission(){
+    private void checkPermission() {
         int permissionCheck = ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE);
 
         if (permissionCheck != PackageManager.PERMISSION_GRANTED) {
@@ -175,5 +144,27 @@ public class MainActivity extends AppCompatActivity implements MainContract.View
         } else {
             startServices();
         }
+    }
+
+    private void startServices() {
+        presenter.startJobScheduler();
+        try {
+            networkServiceDiscoveryOperations.registerNetworkService(new Random().nextInt(100) + 2000);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        networkServiceDiscoveryOperations.startNetworkServiceDiscovery();
+        changeSyncStateButton.setText(getResources().getString(R.string.stop_sync));
+    }
+
+    private void stopServices() {
+        presenter.stopJobScheduler();
+        networkServiceDiscoveryOperations.unregisterNetworkService();
+        networkServiceDiscoveryOperations.stopNetworkServiceDiscovery();
+        changeSyncStateButton.setText(getResources().getString(R.string.start_sync));
+    }
+
+    private boolean isSyncStarted() {
+        return changeSyncStateButton.getText().toString().equals(getResources().getString(R.string.start_sync));
     }
 }

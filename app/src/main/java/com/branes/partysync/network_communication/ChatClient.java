@@ -19,6 +19,8 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
 public class ChatClient {
+    
+    private static final String TAG = ChatClient.class.getName();
 
     private Socket socket = null;
 
@@ -34,9 +36,9 @@ public class ChatClient {
 
         try {
             socket = new Socket(host, port);
-            Log.d(Constants.TAG, "A socket has been created on " + socket.getInetAddress() + ":" + socket.getLocalPort());
+            Log.d(TAG, "A socket has been created on " + socket.getInetAddress() + ":" + socket.getLocalPort());
         } catch (IOException ioException) {
-            Log.e(Constants.TAG, "An exception has occurred while creating the socket: " + ioException.getMessage());
+            Log.e(TAG, "An exception has occurred while creating the socket: " + ioException.getMessage());
             if (Constants.DEBUG) {
                 ioException.printStackTrace();
             }
@@ -55,11 +57,11 @@ public class ChatClient {
         }
     }
 
-    public void sendMessage(byte[] image) {
+    public void sendImage(byte[] image) {
         try {
             messageQueue.put(image);
         } catch (InterruptedException interruptedException) {
-            Log.e(Constants.TAG, "An exception has occurred: " + interruptedException.getMessage());
+            Log.e(TAG, "An exception has occurred: " + interruptedException.getMessage());
             if (Constants.DEBUG) {
                 interruptedException.printStackTrace();
             }
@@ -101,7 +103,7 @@ public class ChatClient {
                 socket.close();
             }
         } catch (IOException ioException) {
-            Log.e(Constants.TAG, "An exception has occurred while closing the socket: " + ioException.getMessage());
+            Log.e(TAG, "An exception has occurred while closing the socket: " + ioException.getMessage());
             if (Constants.DEBUG) {
                 ioException.printStackTrace();
             }
@@ -116,7 +118,7 @@ public class ChatClient {
             BufferedOutputStream bufferedOutputStream = Utilities.getOutputStream(socket);
             if (bufferedOutputStream != null) {
                 try {
-                    Log.d(Constants.TAG, "Sending messages to " + socket.getInetAddress() + ":" + socket.getLocalPort());
+                    Log.d(TAG, "Sending messages to " + socket.getInetAddress() + ":" + socket.getLocalPort());
                     while (!Thread.currentThread().isInterrupted()) {
                         byte[] content = messageQueue.take();
 
@@ -131,14 +133,14 @@ public class ChatClient {
                         }
                     }
                 } catch (InterruptedException interruptedException) {
-                    Log.e(Constants.TAG, "An exception has occurred: " + interruptedException.getMessage());
+                    Log.e(TAG, "An exception has occurred: " + interruptedException.getMessage());
                     if (Constants.DEBUG) {
                         interruptedException.printStackTrace();
                     }
                 }
             }
 
-            Log.i(Constants.TAG, "Send Thread ended");
+            Log.i(TAG, "Send Thread ended");
 
         }
 
@@ -156,7 +158,7 @@ public class ChatClient {
             BufferedInputStream bufferedInputStream = Utilities.getInputStream(socket);
             if (bufferedInputStream != null) {
                 try {
-                    Log.d(Constants.TAG, "Reading messages from " + socket.getInetAddress() + ":" + socket.getLocalPort());
+                    Log.d(TAG, "Reading messages from " + socket.getInetAddress() + ":" + socket.getLocalPort());
                     while (!Thread.currentThread().isInterrupted()) {
                         byte[] content = IOUtils.toByteArray(bufferedInputStream);
                         if (content != null) {
@@ -166,20 +168,23 @@ public class ChatClient {
                             }
                             Long tsLong = System.currentTimeMillis() / 1000;
                             String ts = tsLong.toString();
-                            FileOutputStream fos = new FileOutputStream(photosDirectory.getPath() + "/" + ts);
+
+                            File pictureFile = new File(photosDirectory, "image" + ts);
+
+                            FileOutputStream fos = new FileOutputStream(pictureFile);
                             fos.write(content);
                             fos.close();
                         }
                     }
                 } catch (IOException ioException) {
-                    Log.e(Constants.TAG, "An exception has occurred: " + ioException.getMessage());
+                    Log.e(TAG, "An exception has occurred: " + ioException.getMessage());
                     if (Constants.DEBUG) {
                         ioException.printStackTrace();
                     }
                 }
             }
 
-            Log.i(Constants.TAG, "Receive Thread ended");
+            Log.i(TAG, "Receive Thread ended");
 
         }
 

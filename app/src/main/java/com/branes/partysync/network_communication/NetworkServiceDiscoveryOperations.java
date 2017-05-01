@@ -17,6 +17,8 @@ import java.util.List;
 
 public class NetworkServiceDiscoveryOperations {
 
+    private static final String TAG = NetworkServiceDiscoveryOperations.class.getName();
+
     private MainActivity mainActivity = null;
 
     private String serviceName = null;
@@ -42,15 +44,15 @@ public class NetworkServiceDiscoveryOperations {
 
             @Override
             public void onResolveFailed(NsdServiceInfo nsdServiceInfo, int errorCode) {
-                Log.e(Constants.TAG, "Resolve failed: " + errorCode);
+                Log.e(TAG, "Resolve failed: " + errorCode);
             }
 
             @Override
             public void onServiceResolved(NsdServiceInfo nsdServiceInfo) {
-                Log.i(Constants.TAG, "Resolve succeeded: " + nsdServiceInfo);
+                Log.i(TAG, "Resolve succeeded: " + nsdServiceInfo);
 
                 if (nsdServiceInfo.getServiceName().equals(serviceName)) {
-                    Log.i(Constants.TAG, "The service running on the same machine has been discovered.");
+                    Log.i(TAG, "The service running on the same machine has been discovered.");
                     return;
                 }
 
@@ -67,10 +69,11 @@ public class NetworkServiceDiscoveryOperations {
                     if (chatClient.getSocket() != null) {
                         communicationToServers.add(chatClient);
                         discoveredServices.add(networkService);
+                        mainActivity.setDiscoveredServices(discoveredServices);
                     }
                 }
 
-                Log.i(Constants.TAG, "A service has been discovered on " + host + ":" + port);
+                Log.i(TAG, "A service has been discovered on " + host + ":" + port);
             }
         };
 
@@ -78,16 +81,16 @@ public class NetworkServiceDiscoveryOperations {
 
             @Override
             public void onDiscoveryStarted(String serviceType) {
-                Log.i(Constants.TAG, "Service discovery started: " + serviceType);
+                Log.i(TAG, "Service discovery started: " + serviceType);
             }
 
             @Override
             public void onServiceFound(NsdServiceInfo nsdServiceInfo) {
-                Log.i(Constants.TAG, "Service found: " + nsdServiceInfo);
+                Log.i(TAG, "Service found: " + nsdServiceInfo);
                 if (!nsdServiceInfo.getServiceType().equals(Constants.SERVICE_TYPE)) {
-                    Log.i(Constants.TAG, "Unknown Service Type: " + nsdServiceInfo.getServiceType());
+                    Log.i(TAG, "Unknown Service Type: " + nsdServiceInfo.getServiceType());
                 } else if (nsdServiceInfo.getServiceName().equals(serviceName)) {
-                    Log.i(Constants.TAG, "The service running on the same machine has been discovered: " + serviceName);
+                    Log.i(TAG, "The service running on the same machine has been discovered: " + serviceName);
                 } else if (nsdServiceInfo.getServiceName().contains(Constants.SERVICE_NAME)) {
                     nsdManager.resolveService(nsdServiceInfo, resolveListener);
                 }
@@ -95,40 +98,34 @@ public class NetworkServiceDiscoveryOperations {
 
             @Override
             public void onServiceLost(final NsdServiceInfo nsdServiceInfo) {
-                Log.i(Constants.TAG, "Service lost: " + nsdServiceInfo);
+                Log.i(TAG, "Service lost: " + nsdServiceInfo);
 
-                Handler handler = mainActivity.getHandler();
-                handler.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        ArrayList<NetworkService> discoveredServices = mainActivity.getDiscoveredServices();
-                        NetworkService networkService = new NetworkService(nsdServiceInfo.getServiceName(), (nsdServiceInfo.getHost() != null) ? nsdServiceInfo.getHost().toString() : null, nsdServiceInfo.getPort(), -1);
-                        if (discoveredServices.contains(networkService)) {
-                            int index = discoveredServices.indexOf(networkService);
-                            discoveredServices.remove(index);
-                            communicationToServers.remove(index);
-                        }
+                ArrayList<NetworkService> discoveredServices = mainActivity.getDiscoveredServices();
+                NetworkService networkService = new NetworkService(nsdServiceInfo.getServiceName(), (nsdServiceInfo.getHost() != null) ? nsdServiceInfo.getHost().toString() : null, nsdServiceInfo.getPort(), -1);
+                if (discoveredServices.contains(networkService)) {
+                    int index = discoveredServices.indexOf(networkService);
+                    discoveredServices.remove(index);
+                    communicationToServers.remove(index);
+                    mainActivity.setDiscoveredServices(discoveredServices);
+                }
 
-                        Log.d(Constants.TAG, "serviceName = " + serviceName + "nsdServiceInfo.getServiceName() = " + nsdServiceInfo.getServiceName());
-                    }
-                });
-
+                Log.d(TAG, "serviceName = " + serviceName + "nsdServiceInfo.getServiceName() = " + nsdServiceInfo.getServiceName());
             }
 
             @Override
             public void onDiscoveryStopped(String serviceType) {
-                Log.i(Constants.TAG, "Service discovery stopped: " + serviceType);
+                Log.i(TAG, "Service discovery stopped: " + serviceType);
             }
 
             @Override
             public void onStartDiscoveryFailed(String serviceType, int errorCode) {
-                Log.e(Constants.TAG, "Service discovery start failed: Error code:" + errorCode);
+                Log.e(TAG, "Service discovery start failed: Error code:" + errorCode);
                 nsdManager.stopServiceDiscovery(this);
             }
 
             @Override
             public void onStopDiscoveryFailed(String serviceType, int errorCode) {
-                Log.e(Constants.TAG, "Service discovery stop failed: Error code:" + errorCode);
+                Log.e(TAG, "Service discovery stop failed: Error code:" + errorCode);
                 nsdManager.stopServiceDiscovery(this);
             }
         };
@@ -142,7 +139,7 @@ public class NetworkServiceDiscoveryOperations {
 
             @Override
             public void onRegistrationFailed(NsdServiceInfo nsdServiceInfo, int errorCode) {
-                Log.e(Constants.TAG, "An exception occured while registering the service: " + errorCode);
+                Log.e(TAG, "An exception occured while registering the service: " + errorCode);
             }
 
             @Override
@@ -151,14 +148,14 @@ public class NetworkServiceDiscoveryOperations {
 
             @Override
             public void onUnregistrationFailed(NsdServiceInfo nsdServiceInfo, int errorCode) {
-                Log.e(Constants.TAG, "An exception occured while unregistering the service: " + errorCode);
+                Log.e(TAG, "An exception occured while unregistering the service: " + errorCode);
             }
         };
 
     }
 
     public void registerNetworkService(int port) throws Exception {
-        Log.v(Constants.TAG, "Register Network Service on Port " + port);
+        Log.v(TAG, "Register Network Service on Port " + port);
         chatServer = new ChatServer(this, port);
         ServerSocket serverSocket = chatServer.getServerSocket();
         if (serverSocket == null) {
@@ -177,7 +174,7 @@ public class NetworkServiceDiscoveryOperations {
     }
 
     public void unregisterNetworkService() {
-        Log.v(Constants.TAG, "Unregistrer Network Service");
+        Log.v(TAG, "Unregistrer Network Service");
         nsdManager.unregisterService(registrationListener);
         for (ChatClient communicationFromClient : communicationFromClients) {
             communicationFromClient.stopThreads();
@@ -189,12 +186,12 @@ public class NetworkServiceDiscoveryOperations {
     }
 
     public void startNetworkServiceDiscovery() {
-        Log.v(Constants.TAG, "Start Network Service Discovery");
+        Log.v(TAG, "Start Network Service Discovery");
         nsdManager.discoverServices(Constants.SERVICE_TYPE, NsdManager.PROTOCOL_DNS_SD, discoveryListener);
     }
 
     public void stopNetworkServiceDiscovery() {
-        Log.v(Constants.TAG, "Stop Network Service Discovery");
+        Log.v(TAG, "Stop Network Service Discovery");
         nsdManager.stopServiceDiscovery(discoveryListener);
         ArrayList<NetworkService> discoveredServices = mainActivity.getDiscoveredServices();
         discoveredServices.clear();

@@ -11,6 +11,8 @@ import java.util.List;
 
 public class ChatServer extends Thread {
 
+    private static final String TAG = ChatServer.class.getName();
+    
     private NetworkServiceDiscoveryOperations networkServiceDiscoveryOperations = null;
 
     private ServerSocket serverSocket = null;
@@ -20,7 +22,7 @@ public class ChatServer extends Thread {
         try {
             serverSocket = new ServerSocket(port);
         } catch (IOException ioException) {
-            Log.e(Constants.TAG, "An error has occurred during server run: " + ioException.getMessage());
+            Log.e(TAG, "An error has occurred during server run: " + ioException.getMessage());
             if (Constants.DEBUG) {
                 ioException.printStackTrace();
             }
@@ -30,15 +32,15 @@ public class ChatServer extends Thread {
     public void run() {
         try {
             while (!Thread.currentThread().isInterrupted()) {
-                Log.i(Constants.TAG, "Waiting for a connection...");
+                Log.i(TAG, "Waiting for a connection...");
                 Socket socket = serverSocket.accept();
-                Log.i(Constants.TAG, "Received a connection request from: " + socket.getInetAddress() + ":" + socket.getLocalPort());
+                Log.i(TAG, "Received a connection request from: " + socket.getInetAddress() + ":" + socket.getLocalPort());
                 List<ChatClient> communicationFromClients = networkServiceDiscoveryOperations.getCommunicationFromClients();
                 communicationFromClients.add(new ChatClient(null, socket));
                 networkServiceDiscoveryOperations.setCommunicationFromClients(communicationFromClients);
             }
         } catch (IOException ioException) {
-            Log.e(Constants.TAG, "An error has occurred during server run: " + ioException.getMessage());
+            Log.e(TAG, "An error has occurred during server run: " + ioException.getMessage());
             if (Constants.DEBUG) {
                 ioException.printStackTrace();
             }
@@ -56,7 +58,7 @@ public class ChatServer extends Thread {
                 serverSocket.close();
             }
         } catch (IOException ioException) {
-            Log.e(Constants.TAG, "An error has occurred while closing server socket: " + ioException.getMessage());
+            Log.e(TAG, "An error has occurred while closing server socket: " + ioException.getMessage());
             if (Constants.DEBUG) {
                 ioException.printStackTrace();
             }

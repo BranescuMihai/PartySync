@@ -16,12 +16,11 @@ import java.io.IOException;
 public class GalleryJobScheduler extends JobService {
 
     private static final String TAG = GalleryJobScheduler.class.getName();
-    byte[] picture;
 
     @Override
     public boolean onStartJob(JobParameters params) {
         try {
-            picture = IOUtil.readFile(params.getTriggeredContentAuthorities()[0]);
+            ObjectObserver.getInstance().updateValue(IOUtil.readFile(params.getTriggeredContentAuthorities()[0]));
         } catch (IOException e) {
             Log.e(TAG, "Couldn't retrieve picture");
         }
