@@ -44,4 +44,12 @@
         android:onClick="galleryButtonClicked"
         android:src="@mipmap/ic_photo_library_black_48dp" />
 
+    <Button
+        android:id="@+id/checker"
+        android:layout_above="@+id/gallery_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:onClick="buttonClicked"
+        android:text="Printer"/>
+
 </RelativeLayout>

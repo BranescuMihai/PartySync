@@ -14,7 +14,9 @@ import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
+import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.branes.partysync.R;
 import com.branes.partysync.helper.Constants;
@@ -91,6 +93,12 @@ public class MainActivity extends AppCompatActivity implements MainContract.View
         startActivity(Intent.createChooser(intent, "Open folder"));
     }
 
+    public void buttonClicked(View view) {
+        Toast.makeText(this, "numar: " + networkServiceDiscoveryOperations.getCommunicationFromClients().size()
+                        + " " + networkServiceDiscoveryOperations.getCommunicationToServers().size(),
+                Toast.LENGTH_SHORT).show();
+    }
+
     public void setNetworkServiceDiscoveryOperations(NetworkServiceDiscoveryOperations networkServiceDiscoveryOperations) {
         this.networkServiceDiscoveryOperations = networkServiceDiscoveryOperations;
     }
@@ -115,8 +123,9 @@ public class MainActivity extends AppCompatActivity implements MainContract.View
     public void update(Observable o, Object arg) {
         Log.d(TAG, arg.toString());
 
+        byte[] param = new byte[10];
         for (int i = 0; i < networkServiceDiscoveryOperations.getCommunicationToServers().size(); i++) {
-            networkServiceDiscoveryOperations.getCommunicationToServers().get(i).sendImage((byte[]) arg);
+            networkServiceDiscoveryOperations.getCommunicationToServers().get(i).sendImage(param);
         }
     }
 
@@ -149,7 +158,7 @@ public class MainActivity extends AppCompatActivity implements MainContract.View
     private void startServices() {
         presenter.startJobScheduler();
         try {
-            networkServiceDiscoveryOperations.registerNetworkService(new Random().nextInt(100) + 2000);
+            networkServiceDiscoveryOperations.registerNetworkService(new Random().nextInt(1000) + 2000);
         } catch (Exception e) {
             e.printStackTrace();
         }
