@@ -1,38 +1,51 @@
 package com.branes.partysync.network_communication;
 
-import android.content.Context;
 import android.os.Environment;
 import android.util.Log;
 
 import com.branes.partysync.helper.Constants;
-import com.branes.partysync.helper.Utilities;
+import com.branes.partysync.helper.SecurityHelper;
 
-import org.apache.commons.io.IOUtils;
-
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
 import java.net.Socket;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.security.spec.InvalidParameterSpecException;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+
+import static com.branes.partysync.helper.Utilities.readBytes;
+import static com.branes.partysync.helper.Utilities.sendBytes;
+
 public class ChatClient {
-    
+
     private static final String TAG = ChatClient.class.getName();
 
-    private Socket socket = null;
+    private Socket socket;
 
-    private Context context = null;
+    private SendThread sendThread;
+    private ReceiveThread receiveThread;
 
-    private SendThread sendThread = null;
-    private ReceiveThread receiveThread = null;
+    private OutputStream outputStream;
+    private InputStream inputStream;
+
+    private AuthentificationFailureActions authentificationFailureActions;
 
     private BlockingQueue<byte[]> messageQueue = new ArrayBlockingQueue<>(Constants.MESSAGE_QUEUE_CAPACITY);
 
-    public ChatClient(Context context, final String host, final int port) {
-        this.context = context;
+    ChatClient(AuthentificationFailureActions authentificationFailureActions, final String host, final int port) {
+
+        this.authentificationFailureActions = authentificationFailureActions;
 
         try {
             socket = new Socket(host, port);
@@ -48,16 +61,16 @@ public class ChatClient {
         }
     }
 
-    public ChatClient(Context context, Socket socket) {
-        this.context = context;
-
+    public ChatClient(AuthentificationFailureActions authentificationFailureActions, Socket socket) {
+        this.authentificationFailureActions = authentificationFailureActions;
         this.socket = socket;
+
         if (socket != null) {
             startThreads();
         }
     }
 
-    public void sendImage(byte[] image) {
+    public void sendInformation(byte[] image) {
         try {
             messageQueue.put(image);
         } catch (InterruptedException interruptedException) {
@@ -68,24 +81,11 @@ public class ChatClient {
         }
     }
 
-    public Socket getSocket() {
+    Socket getSocket() {
         return socket;
     }
 
-    public void setSocket(Socket socket) {
-        this.socket = socket;
-    }
-
-    public Context getContext() {
-        return context;
-    }
-
-    public void setContext(Context context) {
-        this.context = context;
-    }
-
-
-    public void startThreads() {
+    private void startThreads() {
         sendThread = new SendThread();
         sendThread.start();
 
@@ -93,7 +93,7 @@ public class ChatClient {
         receiveThread.start();
     }
 
-    public void stopThreads() {
+    void stopThreads() {
 
         sendThread.stopThread();
         receiveThread.stopThread();
@@ -115,18 +115,28 @@ public class ChatClient {
         @Override
         public void run() {
 
-            BufferedOutputStream bufferedOutputStream = Utilities.getOutputStream(socket);
-            if (bufferedOutputStream != null) {
+            try {
+                outputStream = socket.getOutputStream();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            try {
+                sendInformation(SecurityHelper.encryptMsg("Valid password"));
+            } catch (NoSuchAlgorithmException | InvalidKeyException | NoSuchPaddingException
+                    | IllegalBlockSizeException | InvalidParameterSpecException
+                    | BadPaddingException | UnsupportedEncodingException e) {
+                e.printStackTrace();
+            }
+
+            if (outputStream != null) {
                 try {
                     Log.d(TAG, "Sending messages to " + socket.getInetAddress() + ":" + socket.getLocalPort());
                     while (!Thread.currentThread().isInterrupted()) {
                         byte[] content = messageQueue.take();
-
                         if (content != null) {
                             try {
-                                bufferedOutputStream.write(content);
-                                bufferedOutputStream.write('\n');
-                                bufferedOutputStream.flush();
+                                sendBytes(content, outputStream);
                             } catch (IOException e) {
                                 e.printStackTrace();
                             }
@@ -144,7 +154,7 @@ public class ChatClient {
 
         }
 
-        public void stopThread() {
+        void stopThread() {
             interrupt();
         }
 
@@ -155,25 +165,50 @@ public class ChatClient {
         @Override
         public void run() {
 
-            BufferedInputStream bufferedInputStream = Utilities.getInputStream(socket);
-            if (bufferedInputStream != null) {
+            boolean authentificationCompleted = false;
+            try {
+                inputStream = socket.getInputStream();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            if (inputStream != null) {
                 try {
                     Log.d(TAG, "Reading messages from " + socket.getInetAddress() + ":" + socket.getLocalPort());
                     while (!Thread.currentThread().isInterrupted()) {
-                        byte[] content = IOUtils.toByteArray(bufferedInputStream);
+                        byte[] content = readBytes(inputStream);
                         if (content != null) {
-                            File photosDirectory = new File(Environment.getExternalStorageDirectory().getPath() + "/photos/partySync");
-                            if (!photosDirectory.exists()) {
-                                photosDirectory.mkdir();
+
+                            if (!authentificationCompleted) {
+                                try {
+                                    if (SecurityHelper.decryptMsg(content).equals("Valid password")) {
+                                        authentificationCompleted = true;
+                                    } else {
+                                        authentificationFailureActions.authentificationFailed(socket);
+                                        stopThreads();
+                                    }
+
+                                } catch (NoSuchAlgorithmException | InvalidKeyException | NoSuchPaddingException
+                                        | IllegalBlockSizeException | InvalidParameterSpecException
+                                        | BadPaddingException | UnsupportedEncodingException
+                                        | InvalidAlgorithmParameterException e) {
+                                    e.printStackTrace();
+                                }
                             }
-                            Long tsLong = System.currentTimeMillis() / 1000;
-                            String ts = tsLong.toString();
 
-                            File pictureFile = new File(photosDirectory, "image" + ts);
+                            File photosDirectory = new File(Environment.getExternalStorageDirectory().getPath() + "/photos/partySync");
 
-                            FileOutputStream fos = new FileOutputStream(pictureFile);
-                            fos.write(content);
-                            fos.close();
+                            if (photosDirectory.exists() || photosDirectory.mkdirs()) {
+                                Long tsLong = System.currentTimeMillis() / 1000;
+                                String ts = tsLong.toString();
+
+                                File pictureFile = new File(photosDirectory, "image" + ts);
+
+                                if (pictureFile.exists() || pictureFile.createNewFile()) {
+                                    FileOutputStream fos = new FileOutputStream(pictureFile);
+                                    fos.write(content);
+                                    fos.close();
+                                }
+                            }
                         }
                     }
                 } catch (IOException ioException) {
@@ -188,10 +223,8 @@ public class ChatClient {
 
         }
 
-        public void stopThread() {
+        void stopThread() {
             interrupt();
         }
-
     }
-
 }

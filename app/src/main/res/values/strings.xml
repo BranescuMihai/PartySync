@@ -2,4 +2,5 @@
     <string name="app_name">PartySync</string>
     <string name="start_sync">START</string>
     <string name="stop_sync">STOP</string>
+    <string name="gallery_viewer">View gallery</string>
 </resources>

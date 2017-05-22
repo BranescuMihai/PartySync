@@ -3,7 +3,6 @@ package com.branes.partysync.network_communication;
 import android.content.Context;
 import android.net.nsd.NsdManager;
 import android.net.nsd.NsdServiceInfo;
-import android.os.Handler;
 import android.util.Log;
 
 import com.branes.partysync.activities.main.MainActivity;
@@ -12,10 +11,11 @@ import com.branes.partysync.helper.Utilities;
 import com.branes.partysync.model.NetworkService;
 
 import java.net.ServerSocket;
+import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
 
-public class NetworkServiceDiscoveryOperations {
+public class NetworkServiceDiscoveryOperations implements AuthentificationFailureActions {
 
     private static final String TAG = NetworkServiceDiscoveryOperations.class.getName();
 
@@ -229,4 +229,13 @@ public class NetworkServiceDiscoveryOperations {
         mainActivity.setConversations(conversations);
     }
 
+    @Override
+    public void authentificationFailed(Socket socket) {
+        for (ChatClient chatClient : communicationToServers) {
+            if (chatClient.getSocket().equals(socket)) {
+                communicationToServers.remove(chatClient);
+                break;
+            }
+        }
+    }
 }

@@ -1,67 +1,13 @@
 package com.branes.partysync.helper;
 
-import android.util.Log;
-
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.BufferedReader;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
-import java.net.Socket;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.Random;
 
 public class Utilities {
-
-    private static final String TAG = Utilities.class.getName();
-
-    public static BufferedReader getReader(Socket socket) {
-        try {
-            return new BufferedReader(new InputStreamReader(socket.getInputStream()));
-        } catch (IOException ioException) {
-            Log.e(TAG, "An exception has occured: " + ioException.getMessage());
-            if (Constants.DEBUG) {
-                ioException.printStackTrace();
-            }
-        }
-        return null;
-    }
-
-    public static PrintWriter getWriter(Socket socket) {
-        try {
-            return new PrintWriter(new BufferedOutputStream(socket.getOutputStream()));
-        } catch (IOException ioException) {
-            Log.e(TAG, "An exception has occured: " + ioException.getMessage());
-            if (Constants.DEBUG) {
-                ioException.printStackTrace();
-            }
-        }
-        return null;
-    }
-
-    public static BufferedInputStream getInputStream(Socket socket) {
-        try {
-            return new BufferedInputStream(socket.getInputStream());
-        } catch (IOException ioException) {
-            Log.e(TAG, "An exception has occured: " + ioException.getMessage());
-            if (Constants.DEBUG) {
-                ioException.printStackTrace();
-            }
-        }
-        return null;
-    }
-
-    public static BufferedOutputStream getOutputStream(Socket socket) {
-        try {
-            return new BufferedOutputStream(socket.getOutputStream());
-        } catch (IOException ioException) {
-            Log.e(TAG, "An exception has occured: " + ioException.getMessage());
-            if (Constants.DEBUG) {
-                ioException.printStackTrace();
-            }
-        }
-        return null;
-    }
 
     public static String generateIdentifier(int length) {
         StringBuffer result = new StringBuffer("-");
@@ -73,4 +19,32 @@ public class Utilities {
         return result.toString();
     }
 
+    public static byte[] readBytes(InputStream inputStream) throws IOException {
+        DataInputStream dis = new DataInputStream(inputStream);
+
+        int len = dis.readInt();
+        byte[] data = new byte[len];
+        if (len > 0) {
+            dis.readFully(data);
+        }
+        return data;
+    }
+
+    public static void sendBytes(byte[] myByteArray, OutputStream outputStream) throws IOException {
+        sendBytes(myByteArray, 0, myByteArray.length, outputStream);
+    }
+
+    private static void sendBytes(byte[] myByteArray, int start, int len, OutputStream outputStream) throws IOException {
+        if (len < 0)
+            throw new IllegalArgumentException("Negative length not allowed");
+        if (start < 0 || start >= myByteArray.length)
+            throw new IndexOutOfBoundsException("Out of bounds: " + start);
+
+        DataOutputStream dos = new DataOutputStream(outputStream);
+
+        dos.writeInt(len);
+        if (len > 0) {
+            dos.write(myByteArray, start, len);
+        }
+    }
 }

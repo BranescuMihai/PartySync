@@ -36,7 +36,7 @@ public class ChatServer extends Thread {
                 Socket socket = serverSocket.accept();
                 Log.i(TAG, "Received a connection request from: " + socket.getInetAddress() + ":" + socket.getLocalPort());
                 List<ChatClient> communicationFromClients = networkServiceDiscoveryOperations.getCommunicationFromClients();
-                communicationFromClients.add(new ChatClient(null, socket));
+                communicationFromClients.add(new ChatClient(networkServiceDiscoveryOperations, socket));
                 networkServiceDiscoveryOperations.setCommunicationFromClients(communicationFromClients);
             }
         } catch (IOException ioException) {

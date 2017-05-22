@@ -14,13 +14,13 @@ import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
-import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.branes.partysync.R;
 import com.branes.partysync.helper.Constants;
 import com.branes.partysync.helper.ObjectObserver;
+import com.branes.partysync.helper.SecurityHelper;
 import com.branes.partysync.model.NetworkService;
 import com.branes.partysync.network_communication.NetworkServiceDiscoveryOperations;
 
@@ -34,8 +34,11 @@ public class MainActivity extends AppCompatActivity implements MainContract.View
     private static final String TAG = MainActivity.class.getName();
 
     private TextView changeSyncStateButton;
+    private EditText insertPassword;
+
     private MainContract.Presenter presenter;
-    private NetworkServiceDiscoveryOperations networkServiceDiscoveryOperations = null;
+
+    private NetworkServiceDiscoveryOperations networkServiceDiscoveryOperations;
 
     private ArrayList<NetworkService> discoveredServices;
     private ArrayList<NetworkService> conversations;
@@ -45,6 +48,7 @@ public class MainActivity extends AppCompatActivity implements MainContract.View
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         changeSyncStateButton = (TextView) findViewById(R.id.change_sync_state_button);
+        insertPassword = (EditText) findViewById(R.id.insert_password);
 
         setNetworkServiceDiscoveryOperations(new NetworkServiceDiscoveryOperations(this));
 
@@ -80,6 +84,8 @@ public class MainActivity extends AppCompatActivity implements MainContract.View
 
     public void syncButtonClicked(View view) throws Exception {
         if (isSyncStarted()) {
+            SecurityHelper.initialize(insertPassword.getText().toString());
+            insertPassword.setText("");
             checkPermission();
         } else {
             stopServices();
@@ -91,12 +97,6 @@ public class MainActivity extends AppCompatActivity implements MainContract.View
         Uri uri = Uri.parse(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).getPath());
         intent.setDataAndType(uri, "image/*");
         startActivity(Intent.createChooser(intent, "Open folder"));
-    }
-
-    public void buttonClicked(View view) {
-        Toast.makeText(this, "numar: " + networkServiceDiscoveryOperations.getCommunicationFromClients().size()
-                        + " " + networkServiceDiscoveryOperations.getCommunicationToServers().size(),
-                Toast.LENGTH_SHORT).show();
     }
 
     public void setNetworkServiceDiscoveryOperations(NetworkServiceDiscoveryOperations networkServiceDiscoveryOperations) {
@@ -123,9 +123,8 @@ public class MainActivity extends AppCompatActivity implements MainContract.View
     public void update(Observable o, Object arg) {
         Log.d(TAG, arg.toString());
 
-        byte[] param = new byte[10];
         for (int i = 0; i < networkServiceDiscoveryOperations.getCommunicationToServers().size(); i++) {
-            networkServiceDiscoveryOperations.getCommunicationToServers().get(i).sendImage(param);
+            networkServiceDiscoveryOperations.getCommunicationToServers().get(i).sendInformation((byte[]) arg);
         }
     }
 
