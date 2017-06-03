@@ -1,9 +1,11 @@
-package com.branes.partysync.helper;
+package com.branes.partysync.camera;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.util.Log;
+
+import com.branes.partysync.helper.IoUtilities;
 
 import java.io.IOException;
 
@@ -17,9 +19,9 @@ public class CameraReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
         try {
-            String path = IOUtil.getRealPathFromUri(context, intent.getData());
+            String path = IoUtilities.getRealPathFromUri(context, intent.getData());
             if (path != null) {
-                ObjectObserver.getInstance().updateValue(IOUtil.readFile(path));
+                ObjectObserver.getInstance().updateValue(IoUtilities.readFile(path));
             }
         } catch (IOException e) {
             Log.e(TAG, "Couldn't retrieve picture");

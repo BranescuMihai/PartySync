@@ -1,8 +1,14 @@
 package com.branes.partysync.network_communication;
 
+import android.annotation.SuppressLint;
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.os.Environment;
+import android.provider.Settings;
+import android.telephony.TelephonyManager;
 import android.util.Log;
 
+import com.branes.partysync.actions.AuthenticationFailureActions;
 import com.branes.partysync.helper.Constants;
 import com.branes.partysync.helper.SecurityHelper;
 
@@ -17,6 +23,8 @@ import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidParameterSpecException;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
@@ -24,12 +32,16 @@ import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 
+import static android.content.Context.MODE_PRIVATE;
 import static com.branes.partysync.helper.Utilities.readBytes;
 import static com.branes.partysync.helper.Utilities.sendBytes;
 
-public class ChatClient {
+/**
+ * Copyright (c) 2017 Mihai Branescu
+ */
+public class PeerConnection {
 
-    private static final String TAG = ChatClient.class.getName();
+    private static final String TAG = PeerConnection.class.getName();
 
     private Socket socket;
 
@@ -39,13 +51,19 @@ public class ChatClient {
     private OutputStream outputStream;
     private InputStream inputStream;
 
-    private AuthentificationFailureActions authentificationFailureActions;
+    private String peerUniqueId;
+    private String username;
+    private String host;
+
+    private AuthenticationFailureActions authenticationFailureActions;
 
     private BlockingQueue<byte[]> messageQueue = new ArrayBlockingQueue<>(Constants.MESSAGE_QUEUE_CAPACITY);
 
-    ChatClient(AuthentificationFailureActions authentificationFailureActions, final String host, final int port) {
+    PeerConnection(AuthenticationFailureActions authenticationFailureActions, final String host, final int port, String username) {
 
-        this.authentificationFailureActions = authentificationFailureActions;
+        this.authenticationFailureActions = authenticationFailureActions;
+        this.username = username;
+        this.host = host;
 
         try {
             socket = new Socket(host, port);
@@ -61,8 +79,8 @@ public class ChatClient {
         }
     }
 
-    public ChatClient(AuthentificationFailureActions authentificationFailureActions, Socket socket) {
-        this.authentificationFailureActions = authentificationFailureActions;
+    PeerConnection(AuthenticationFailureActions authenticationFailureActions, Socket socket) {
+        this.authenticationFailureActions = authenticationFailureActions;
         this.socket = socket;
 
         if (socket != null) {
@@ -81,8 +99,20 @@ public class ChatClient {
         }
     }
 
+    public String getUsername() {
+        return username;
+    }
+
+    String getHost() {
+        return host;
+    }
+
     Socket getSocket() {
         return socket;
+    }
+
+    public String getPeerUniqueId() {
+        return peerUniqueId;
     }
 
     private void startThreads() {
@@ -122,10 +152,10 @@ public class ChatClient {
             }
 
             try {
-                sendInformation(SecurityHelper.encryptMsg("Valid password"));
+                sendInformation(SecurityHelper.encryptMsg("Valid:" + getDeviceId()));
             } catch (NoSuchAlgorithmException | InvalidKeyException | NoSuchPaddingException
-                    | IllegalBlockSizeException | InvalidParameterSpecException
-                    | BadPaddingException | UnsupportedEncodingException e) {
+                    | IllegalBlockSizeException | InvalidParameterSpecException | BadPaddingException
+                    | UnsupportedEncodingException | InvalidAlgorithmParameterException e) {
                 e.printStackTrace();
             }
 
@@ -165,7 +195,7 @@ public class ChatClient {
         @Override
         public void run() {
 
-            boolean authentificationCompleted = false;
+            boolean authenticationCompleted = false;
             try {
                 inputStream = socket.getInputStream();
             } catch (IOException e) {
@@ -178,30 +208,34 @@ public class ChatClient {
                         byte[] content = readBytes(inputStream);
                         if (content != null) {
 
-                            if (!authentificationCompleted) {
+                            if (!authenticationCompleted) {
                                 try {
-                                    if (SecurityHelper.decryptMsg(content).equals("Valid password")) {
-                                        authentificationCompleted = true;
-                                    } else {
-                                        authentificationFailureActions.authentificationFailed(socket);
-                                        stopThreads();
-                                    }
+                                    String decrypted = SecurityHelper.decryptMsg(content);
+                                    if (decrypted.contains("Valid")) {
 
+                                        String[] split = decrypted.split(":");
+                                        peerUniqueId = split[1];
+                                        saveUniqueIdInSharedPreferences(peerUniqueId);
+                                        authenticationCompleted = true;
+                                        continue;
+                                    }
                                 } catch (NoSuchAlgorithmException | InvalidKeyException | NoSuchPaddingException
                                         | IllegalBlockSizeException | InvalidParameterSpecException
                                         | BadPaddingException | UnsupportedEncodingException
                                         | InvalidAlgorithmParameterException e) {
-                                    e.printStackTrace();
+                                    authenticationFailureActions.onAuthenticationFailed(socket);
+                                    stopThreads();
+                                    continue;
                                 }
                             }
 
-                            File photosDirectory = new File(Environment.getExternalStorageDirectory().getPath() + "/photos/partySync");
+                            File photosDirectory = new File(Environment.getExternalStorageDirectory().getPath() + "/Pictures/partySync");
 
                             if (photosDirectory.exists() || photosDirectory.mkdirs()) {
                                 Long tsLong = System.currentTimeMillis() / 1000;
                                 String ts = tsLong.toString();
 
-                                File pictureFile = new File(photosDirectory, "image" + ts);
+                                File pictureFile = new File(photosDirectory, "image" + ts + ".jpg");
 
                                 if (pictureFile.exists() || pictureFile.createNewFile()) {
                                     FileOutputStream fos = new FileOutputStream(pictureFile);
@@ -226,5 +260,37 @@ public class ChatClient {
         void stopThread() {
             interrupt();
         }
+    }
+
+    @SuppressLint("HardwareIds")
+    private String getDeviceId() {
+        String deviceId;
+        TelephonyManager mTelephony = (TelephonyManager) getContext().getSystemService(Context.TELEPHONY_SERVICE);
+
+        if (mTelephony.getDeviceId() != null) {
+            deviceId = mTelephony.getDeviceId();
+        } else {
+            deviceId = Settings.Secure.getString(getContext().getContentResolver(), Settings.Secure.ANDROID_ID);
+        }
+        return deviceId;
+    }
+
+    private Context getContext() {
+        return (Context) authenticationFailureActions;
+    }
+
+    private void saveUniqueIdInSharedPreferences(String peerUniqueId) {
+        SharedPreferences prefs = getContext().getSharedPreferences(Constants.SERVICE_NAME, MODE_PRIVATE);
+
+        Set<String> uniqueIds = prefs.getStringSet("peerUniqueIds", null);
+
+        if (uniqueIds == null) {
+            uniqueIds = new HashSet<>();
+        }
+        uniqueIds.add(peerUniqueId);
+
+        SharedPreferences.Editor editor = prefs.edit();
+        editor.putStringSet("peerUniqueIds", uniqueIds);
+        editor.apply();
     }
 }

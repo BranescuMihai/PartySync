@@ -1,12 +1,11 @@
-package com.branes.partysync.helper;
+package com.branes.partysync.camera;
 
 import java.util.Observable;
 
 /**
  * Copyright (c) 2017 Mihai Branescu
  */
-
-public class ObjectObserver  extends Observable {
+public class ObjectObserver extends Observable {
     private static ObjectObserver instance = new ObjectObserver();
 
     public static ObjectObserver getInstance() {

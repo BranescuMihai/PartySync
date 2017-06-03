@@ -1,10 +1,12 @@
-package com.branes.partysync.helper;
+package com.branes.partysync.camera;
 
 import android.annotation.TargetApi;
 import android.app.job.JobParameters;
 import android.app.job.JobService;
 import android.os.Build;
 import android.util.Log;
+
+import com.branes.partysync.helper.IoUtilities;
 
 import java.io.IOException;
 
@@ -20,7 +22,7 @@ public class GalleryJobScheduler extends JobService {
     @Override
     public boolean onStartJob(JobParameters params) {
         try {
-            ObjectObserver.getInstance().updateValue(IOUtil.readFile(params.getTriggeredContentAuthorities()[0]));
+            ObjectObserver.getInstance().updateValue(IoUtilities.readFile(params.getTriggeredContentAuthorities()[0]));
         } catch (IOException e) {
             Log.e(TAG, "Couldn't retrieve picture");
         }

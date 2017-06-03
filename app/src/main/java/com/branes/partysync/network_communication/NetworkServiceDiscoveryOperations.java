@@ -5,237 +5,177 @@ import android.net.nsd.NsdManager;
 import android.net.nsd.NsdServiceInfo;
 import android.util.Log;
 
-import com.branes.partysync.activities.main.MainActivity;
+import com.branes.partysync.actions.AuthenticationFailureActions;
+import com.branes.partysync.actions.PeerListChangeActions;
+import com.branes.partysync.actions.ServiceDiscoveredActions;
+import com.branes.partysync.actions.ServiceRegisteredListener;
+import com.branes.partysync.actions.ServiceResolvedActions;
 import com.branes.partysync.helper.Constants;
 import com.branes.partysync.helper.Utilities;
-import com.branes.partysync.model.NetworkService;
 
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
 
-public class NetworkServiceDiscoveryOperations implements AuthentificationFailureActions {
+/**
+ * Copyright (c) 2017 Mihai Branescu
+ */
+public class NetworkServiceDiscoveryOperations implements AuthenticationFailureActions,
+        ServiceResolvedActions, ServiceDiscoveredActions, ServiceRegisteredListener {
 
     private static final String TAG = NetworkServiceDiscoveryOperations.class.getName();
 
-    private MainActivity mainActivity = null;
+    private String serviceName;
 
-    private String serviceName = null;
+    private PeerConnectionIncoming peerConnectionIncoming;
+    private List<PeerConnection> communicationToPeers;
+    private List<PeerConnection> communicationFromClients;
 
-    private ChatServer chatServer = null;
-    private List<ChatClient> communicationToServers = null;
-    private List<ChatClient> communicationFromClients = null;
+    private NsdManager nsdManager;
+    private NsdManager.DiscoveryListener discoveryListener;
+    private NsdManager.RegistrationListener registrationListener;
 
-    private NsdManager nsdManager = null;
-    private NsdManager.ResolveListener resolveListener = null;
-    private NsdManager.DiscoveryListener discoveryListener = null;
-    private NsdManager.RegistrationListener registrationListener = null;
+    private PeerListChangeActions peerListChangeActions;
 
-    public NetworkServiceDiscoveryOperations(final Context context) {
+    public NetworkServiceDiscoveryOperations(final PeerListChangeActions peerListChangeActions) {
 
-        this.mainActivity = (MainActivity) context;
-        this.communicationToServers = new ArrayList<>();
+        this.communicationToPeers = new ArrayList<>();
         this.communicationFromClients = new ArrayList<>();
 
-        nsdManager = (NsdManager) context.getSystemService(Context.NSD_SERVICE);
+        this.peerListChangeActions = peerListChangeActions;
 
-        resolveListener = new NsdManager.ResolveListener() {
-
-            @Override
-            public void onResolveFailed(NsdServiceInfo nsdServiceInfo, int errorCode) {
-                Log.e(TAG, "Resolve failed: " + errorCode);
-            }
-
-            @Override
-            public void onServiceResolved(NsdServiceInfo nsdServiceInfo) {
-                Log.i(TAG, "Resolve succeeded: " + nsdServiceInfo);
-
-                if (nsdServiceInfo.getServiceName().equals(serviceName)) {
-                    Log.i(TAG, "The service running on the same machine has been discovered.");
-                    return;
-                }
-
-                String host = nsdServiceInfo.getHost().toString();
-                if (host.startsWith("/")) {
-                    host = host.substring(1);
-                }
-
-                int port = nsdServiceInfo.getPort();
-                ArrayList<NetworkService> discoveredServices = mainActivity.getDiscoveredServices();
-                NetworkService networkService = new NetworkService(nsdServiceInfo.getServiceName(), host, port, Constants.CONVERSATION_TO_SERVER);
-                if (!discoveredServices.contains(networkService)) {
-                    ChatClient chatClient = new ChatClient(null, host, port);
-                    if (chatClient.getSocket() != null) {
-                        communicationToServers.add(chatClient);
-                        discoveredServices.add(networkService);
-                        mainActivity.setDiscoveredServices(discoveredServices);
-                    }
-                }
-
-                Log.i(TAG, "A service has been discovered on " + host + ":" + port);
-            }
-        };
-
-        discoveryListener = new NsdManager.DiscoveryListener() {
-
-            @Override
-            public void onDiscoveryStarted(String serviceType) {
-                Log.i(TAG, "Service discovery started: " + serviceType);
-            }
-
-            @Override
-            public void onServiceFound(NsdServiceInfo nsdServiceInfo) {
-                Log.i(TAG, "Service found: " + nsdServiceInfo);
-                if (!nsdServiceInfo.getServiceType().equals(Constants.SERVICE_TYPE)) {
-                    Log.i(TAG, "Unknown Service Type: " + nsdServiceInfo.getServiceType());
-                } else if (nsdServiceInfo.getServiceName().equals(serviceName)) {
-                    Log.i(TAG, "The service running on the same machine has been discovered: " + serviceName);
-                } else if (nsdServiceInfo.getServiceName().contains(Constants.SERVICE_NAME)) {
-                    nsdManager.resolveService(nsdServiceInfo, resolveListener);
-                }
-            }
-
-            @Override
-            public void onServiceLost(final NsdServiceInfo nsdServiceInfo) {
-                Log.i(TAG, "Service lost: " + nsdServiceInfo);
-
-                ArrayList<NetworkService> discoveredServices = mainActivity.getDiscoveredServices();
-                NetworkService networkService = new NetworkService(nsdServiceInfo.getServiceName(), (nsdServiceInfo.getHost() != null) ? nsdServiceInfo.getHost().toString() : null, nsdServiceInfo.getPort(), -1);
-                if (discoveredServices.contains(networkService)) {
-                    int index = discoveredServices.indexOf(networkService);
-                    discoveredServices.remove(index);
-                    communicationToServers.remove(index);
-                    mainActivity.setDiscoveredServices(discoveredServices);
-                }
-
-                Log.d(TAG, "serviceName = " + serviceName + "nsdServiceInfo.getServiceName() = " + nsdServiceInfo.getServiceName());
-            }
-
-            @Override
-            public void onDiscoveryStopped(String serviceType) {
-                Log.i(TAG, "Service discovery stopped: " + serviceType);
-            }
-
-            @Override
-            public void onStartDiscoveryFailed(String serviceType, int errorCode) {
-                Log.e(TAG, "Service discovery start failed: Error code:" + errorCode);
-                nsdManager.stopServiceDiscovery(this);
-            }
-
-            @Override
-            public void onStopDiscoveryFailed(String serviceType, int errorCode) {
-                Log.e(TAG, "Service discovery stop failed: Error code:" + errorCode);
-                nsdManager.stopServiceDiscovery(this);
-            }
-        };
-
-        registrationListener = new NsdManager.RegistrationListener() {
-
-            @Override
-            public void onServiceRegistered(NsdServiceInfo nsdServiceInfo) {
-                serviceName = nsdServiceInfo.getServiceName();
-            }
-
-            @Override
-            public void onRegistrationFailed(NsdServiceInfo nsdServiceInfo, int errorCode) {
-                Log.e(TAG, "An exception occured while registering the service: " + errorCode);
-            }
-
-            @Override
-            public void onServiceUnregistered(NsdServiceInfo nsdServiceInfo) {
-            }
-
-            @Override
-            public void onUnregistrationFailed(NsdServiceInfo nsdServiceInfo, int errorCode) {
-                Log.e(TAG, "An exception occured while unregistering the service: " + errorCode);
-            }
-        };
-
+        nsdManager = (NsdManager) ((Context) peerListChangeActions).getSystemService(Context.NSD_SERVICE);
     }
 
-    public void registerNetworkService(int port) throws Exception {
-        Log.v(TAG, "Register Network Service on Port " + port);
-        chatServer = new ChatServer(this, port);
-        ServerSocket serverSocket = chatServer.getServerSocket();
+    @Override
+    public void onServiceRegistered(NsdServiceInfo nsdServiceInfo) {
+        serviceName = nsdServiceInfo.getServiceName();
+    }
+
+    @Override
+    public void onServiceFound(NsdServiceInfo nsdServiceInfo) {
+        nsdManager.resolveService(nsdServiceInfo, new NsdServiceResolvedListener(serviceName, NetworkServiceDiscoveryOperations.this));
+    }
+
+    @Override
+    public void onServiceLost(NsdServiceInfo nsdServiceInfo) {
+        if (nsdServiceInfo.getHost() != null) {
+            PeerConnection client = getChatClientIfExists(retrieveHost(nsdServiceInfo));
+
+            if (client != null) {
+                communicationToPeers.remove(client);
+                peerListChangeActions.onPeerListChanged();
+            }
+        }
+    }
+
+    @Override
+    public void onServiceResolved(NsdServiceInfo serviceInfo, String serviceName) {
+        String host = retrieveHost(serviceInfo);
+
+        int port = serviceInfo.getPort();
+        String username = serviceInfo.getServiceName().split("-")[2];
+
+        if (getChatClientIfExists(host) == null) {
+            PeerConnection peerConnection = new PeerConnection(this, host, port, username);
+            if (peerConnection.getSocket() != null) {
+                communicationToPeers.add(peerConnection);
+
+                peerListChangeActions.onPeerListChanged();
+            }
+        }
+
+        Log.i(TAG, "A service has been discovered on " + host + ":" + port);
+    }
+
+    @Override
+    public void onAuthenticationFailed(Socket socket) {
+        for (PeerConnection peerConnection : communicationToPeers) {
+            if (peerConnection.getSocket().equals(socket)) {
+                communicationToPeers.remove(peerConnection);
+                peerListChangeActions.onPeerListChanged();
+                break;
+            }
+        }
+    }
+
+    public void registerNetworkService(String name) throws Exception {
+
+        peerConnectionIncoming = new PeerConnectionIncoming(this);
+        ServerSocket serverSocket = peerConnectionIncoming.getServerSocket();
         if (serverSocket == null) {
             throw new Exception("Could not get server socket");
         }
-        chatServer.start();
+
+        Log.v(TAG, "Register Network Service on Port " + serverSocket.getLocalPort());
+        peerConnectionIncoming.start();
 
         NsdServiceInfo nsdServiceInfo = new NsdServiceInfo();
 
-        nsdServiceInfo.setServiceName(Constants.SERVICE_NAME + Utilities.generateIdentifier(Constants.IDENTIFIER_LENGTH));
+        nsdServiceInfo.setServiceName(Constants.SERVICE_NAME + Utilities.generateIdentifier(Constants.IDENTIFIER_LENGTH) +
+                name);
         nsdServiceInfo.setServiceType(Constants.SERVICE_TYPE);
         nsdServiceInfo.setHost(serverSocket.getInetAddress());
         nsdServiceInfo.setPort(serverSocket.getLocalPort());
 
+        registrationListener = new NsdServiceRegisteredListener(this);
         nsdManager.registerService(nsdServiceInfo, NsdManager.PROTOCOL_DNS_SD, registrationListener);
     }
 
     public void unregisterNetworkService() {
-        Log.v(TAG, "Unregistrer Network Service");
+        Log.v(TAG, "Unregister Network Service");
         nsdManager.unregisterService(registrationListener);
-        for (ChatClient communicationFromClient : communicationFromClients) {
+        for (PeerConnection communicationFromClient : communicationFromClients) {
             communicationFromClient.stopThreads();
         }
         communicationFromClients.clear();
-        chatServer.stopThread();
-        ArrayList<NetworkService> conversations = mainActivity.getConversations();
-        conversations.clear();
+        peerConnectionIncoming.stopThread();
     }
 
     public void startNetworkServiceDiscovery() {
         Log.v(TAG, "Start Network Service Discovery");
+        discoveryListener = new NsdServiceDiscoveryListener(nsdManager, serviceName, this);
         nsdManager.discoverServices(Constants.SERVICE_TYPE, NsdManager.PROTOCOL_DNS_SD, discoveryListener);
     }
 
     public void stopNetworkServiceDiscovery() {
         Log.v(TAG, "Stop Network Service Discovery");
         nsdManager.stopServiceDiscovery(discoveryListener);
-        ArrayList<NetworkService> discoveredServices = mainActivity.getDiscoveredServices();
-        discoveredServices.clear();
-        for (ChatClient communicationToServer : communicationToServers) {
+
+        for (PeerConnection communicationToServer : communicationToPeers) {
             communicationToServer.stopThreads();
         }
-        communicationToServers.clear();
+        communicationToPeers.clear();
+        peerListChangeActions.onPeerListChanged();
     }
 
-    public List<ChatClient> getCommunicationToServers() {
-        return communicationToServers;
+    public List<PeerConnection> getCommunicationToPeers() {
+        return communicationToPeers;
     }
 
-    public void setCommunicationToServers(List<ChatClient> communicationToServers) {
-        this.communicationToServers = communicationToServers;
-    }
-
-    public List<ChatClient> getCommunicationFromClients() {
+    List<PeerConnection> getCommunicationFromClients() {
         return communicationFromClients;
     }
 
-    public void setCommunicationFromClients(List<ChatClient> communicationFromClients) {
+    void setCommunicationFromClients(List<PeerConnection> communicationFromClients) {
         this.communicationFromClients = communicationFromClients;
-        ArrayList<NetworkService> conversations = new ArrayList<>();
-        for (ChatClient communicationFromClient : communicationFromClients) {
-            NetworkService conversation = new NetworkService(
-                    null,
-                    communicationFromClient.getSocket().getInetAddress().toString(),
-                    communicationFromClient.getSocket().getLocalPort(),
-                    Constants.CONVERSATION_FROM_CLIENT
-            );
-
-            conversations.add(conversation);
-        }
-        mainActivity.setConversations(conversations);
     }
 
-    @Override
-    public void authentificationFailed(Socket socket) {
-        for (ChatClient chatClient : communicationToServers) {
-            if (chatClient.getSocket().equals(socket)) {
-                communicationToServers.remove(chatClient);
-                break;
+    private PeerConnection getChatClientIfExists(String host) {
+        for (PeerConnection client : communicationToPeers) {
+            if (client.getHost().equals(host)) {
+                return client;
             }
         }
+        return null;
+    }
+
+    private String retrieveHost(NsdServiceInfo serviceInfo) {
+        String host = serviceInfo.getHost().toString();
+        if (host.startsWith("/")) {
+            return host.substring(1);
+        }
+        return host;
     }
 }

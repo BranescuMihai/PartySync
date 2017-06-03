@@ -9,18 +9,21 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.List;
 
-public class ChatServer extends Thread {
+/**
+ * Copyright (c) 2017 Mihai Branescu
+ */
+class PeerConnectionIncoming extends Thread {
 
-    private static final String TAG = ChatServer.class.getName();
+    private static final String TAG = PeerConnectionIncoming.class.getName();
     
     private NetworkServiceDiscoveryOperations networkServiceDiscoveryOperations = null;
 
     private ServerSocket serverSocket = null;
 
-    public ChatServer(NetworkServiceDiscoveryOperations networkServiceDiscoveryOperations, int port) {
+    PeerConnectionIncoming(NetworkServiceDiscoveryOperations networkServiceDiscoveryOperations) {
         this.networkServiceDiscoveryOperations = networkServiceDiscoveryOperations;
         try {
-            serverSocket = new ServerSocket(port);
+            serverSocket = new ServerSocket(0);
         } catch (IOException ioException) {
             Log.e(TAG, "An error has occurred during server run: " + ioException.getMessage());
             if (Constants.DEBUG) {
@@ -35,8 +38,8 @@ public class ChatServer extends Thread {
                 Log.i(TAG, "Waiting for a connection...");
                 Socket socket = serverSocket.accept();
                 Log.i(TAG, "Received a connection request from: " + socket.getInetAddress() + ":" + socket.getLocalPort());
-                List<ChatClient> communicationFromClients = networkServiceDiscoveryOperations.getCommunicationFromClients();
-                communicationFromClients.add(new ChatClient(networkServiceDiscoveryOperations, socket));
+                List<PeerConnection> communicationFromClients = networkServiceDiscoveryOperations.getCommunicationFromClients();
+                communicationFromClients.add(new PeerConnection(networkServiceDiscoveryOperations, socket));
                 networkServiceDiscoveryOperations.setCommunicationFromClients(communicationFromClients);
             }
         } catch (IOException ioException) {
@@ -47,11 +50,11 @@ public class ChatServer extends Thread {
         }
     }
 
-    public ServerSocket getServerSocket() {
+    ServerSocket getServerSocket() {
         return serverSocket;
     }
 
-    public void stopThread() {
+    void stopThread() {
         interrupt();
         try {
             if (serverSocket != null) {

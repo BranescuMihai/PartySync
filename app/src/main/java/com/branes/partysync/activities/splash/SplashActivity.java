@@ -1,4 +1,4 @@
-package com.branes.partysync.activities;
+package com.branes.partysync.activities.splash;
 
 import android.app.Activity;
 import android.content.Intent;

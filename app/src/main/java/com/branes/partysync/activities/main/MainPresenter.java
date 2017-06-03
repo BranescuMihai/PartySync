@@ -8,7 +8,7 @@ import android.content.Context;
 import android.os.Build;
 import android.provider.MediaStore;
 
-import com.branes.partysync.helper.GalleryJobScheduler;
+import com.branes.partysync.camera.GalleryJobScheduler;
 
 /**
  * Copyright (c) 2017 Mihai Branescu

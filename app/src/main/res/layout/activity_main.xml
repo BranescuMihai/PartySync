@@ -12,17 +12,33 @@
     tools:context="com.branes.partysync.activities.main.MainActivity">
 
     <EditText
+        android:id="@+id/insert_username"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/insert_password"
+        android:layout_margin="15dp"
+        android:background="@color/colorWhite"
+        android:gravity="center"
+        android:hint="@string/username_hint"
+        android:inputType="textCapWords"
+        android:maxLength="15"
+        android:maxLines="1"
+        android:padding="10dp"
+        android:textSize="20sp" />
+
+    <EditText
         android:id="@+id/insert_password"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_above="@+id/card_view"
         android:layout_margin="15dp"
-        android:textSize="20sp"
-        android:padding="10dp"
-        android:maxLength="15"
         android:background="@color/colorWhite"
         android:gravity="center"
-        android:inputType="textPassword" />
+        android:hint="@string/password_hint"
+        android:inputType="textPassword"
+        android:maxLength="15"
+        android:padding="10dp"
+        android:textSize="20sp" />
 
     <android.support.v7.widget.CardView
         android:id="@+id/card_view"
@@ -46,6 +62,18 @@
             android:textStyle="bold" />
 
     </android.support.v7.widget.CardView>
+
+    <com.branes.partysync.custom_ui_elements.CircularTextView
+        android:id="@+id/number_of_peers"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/card_view"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="10dp"
+        android:gravity="center"
+        android:onClick="peersButtonClicked"
+        android:padding="6dp"
+        android:textSize="25sp" />
 
     <ImageButton
         android:id="@+id/gallery_button"
