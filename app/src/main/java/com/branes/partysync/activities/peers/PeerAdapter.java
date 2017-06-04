@@ -107,9 +107,7 @@ class PeerAdapter extends BaseAdapter {
     }
 
     private void setCheckedAutomatically(Switch peerSwitch, boolean isEnabled) {
-        peerSwitch.setOnCheckedChangeListener(null);
         peerSwitch.setChecked(isEnabled);
         peerSwitch.jumpDrawablesToCurrentState();
-        peerSwitch.setOnCheckedChangeListener(onCheckedChangeListener);
     }
 }

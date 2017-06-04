@@ -62,7 +62,9 @@ public class Utilities {
         SharedPreferences prefs = context.getSharedPreferences(Constants.SERVICE_NAME, MODE_PRIVATE);
 
         Set<String> uniqueIds = getUniqueIdFromSharedPreferences(context);
-        uniqueIds.add(peerUniqueId);
+        if(!uniqueIds.contains(peerUniqueId)) {
+            uniqueIds.add(peerUniqueId);
+        }
 
         SharedPreferences.Editor editor = prefs.edit();
         editor.putStringSet("peerUniqueIds", uniqueIds);

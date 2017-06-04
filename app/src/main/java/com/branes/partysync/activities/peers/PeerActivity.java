@@ -46,8 +46,10 @@ public class PeerActivity extends AppCompatActivity implements PeerElementAction
         String selectedId = peerConnections.get(position).getPeerUniqueId();
 
         if(isEnabled) {
+            peerConnections.get(position).setConnectionDeactivated(false);
             Utilities.removeUniqueIdFromSharedPreferences(this, selectedId);
         } else {
+            peerConnections.get(position).setConnectionDeactivated(true);
             Utilities.saveUniqueIdInSharedPreferences(this, selectedId);
         }
     }
