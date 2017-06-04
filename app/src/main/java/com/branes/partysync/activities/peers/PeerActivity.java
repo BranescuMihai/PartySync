@@ -6,35 +6,44 @@ import android.widget.ListView;
 
 import com.branes.partysync.R;
 import com.branes.partysync.actions.PeerElementActions;
-import com.branes.partysync.helper.Constants;
+import com.branes.partysync.dependency_injection.DependencyInjection;
 import com.branes.partysync.helper.Utilities;
+import com.branes.partysync.network_communication.NetworkServiceDiscoveryOperations;
+import com.branes.partysync.network_communication.PeerConnection;
 
-import java.util.ArrayList;
+import java.util.List;
+
+import javax.inject.Inject;
 
 /**
  * Copyright (c) 2017 Mihai Branescu
  */
 public class PeerActivity extends AppCompatActivity implements PeerElementActions {
 
-    private ArrayList<String> uniqueIds;
+    private List<PeerConnection> peerConnections;
+
+    @Inject
+    NetworkServiceDiscoveryOperations networkServiceDiscoveryOperations;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        DependencyInjection.getAppComponent(this).inject(this);
+
         setContentView(R.layout.activity_peer);
 
         ListView peerList = (ListView) findViewById(R.id.peer_list);
 
-        ArrayList<String> names = getIntent().getStringArrayListExtra(Constants.CLIENT_NAMES);
-        uniqueIds = getIntent().getStringArrayListExtra(Constants.CLIENT_IDS);
+        peerConnections = networkServiceDiscoveryOperations.getCommunicationToPeers();
 
-        PeerAdapter peerAdapter = new PeerAdapter(this, names, uniqueIds, Utilities.getUniqueIdFromSharedPreferences(this));
+        PeerAdapter peerAdapter = new PeerAdapter(this, peerConnections, Utilities.getUniqueIdFromSharedPreferences(this));
         peerList.setAdapter(peerAdapter);
     }
 
     @Override
     public void onPeerElementClicked(int position, boolean isEnabled) {
-        String selectedId = uniqueIds.get(position);
+        String selectedId = peerConnections.get(position).getPeerUniqueId();
 
         if(isEnabled) {
             Utilities.removeUniqueIdFromSharedPreferences(this, selectedId);

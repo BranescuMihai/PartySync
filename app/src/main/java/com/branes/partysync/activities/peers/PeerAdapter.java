@@ -12,8 +12,9 @@ import android.widget.TextView;
 
 import com.branes.partysync.R;
 import com.branes.partysync.actions.PeerElementActions;
+import com.branes.partysync.network_communication.PeerConnection;
 
-import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -21,8 +22,7 @@ import java.util.Set;
  */
 class PeerAdapter extends BaseAdapter {
 
-    private ArrayList<String> peerNames;
-    private ArrayList<String> peerIds;
+    private List<PeerConnection> peerConnections;
     private Set<String> restrictedPeers;
     private PeerElementActions peerElementActions;
     private int position;
@@ -34,22 +34,20 @@ class PeerAdapter extends BaseAdapter {
         }
     };
 
-    PeerAdapter(PeerElementActions peerElementActions, ArrayList<String> peerNames,
-                ArrayList<String> peerIds, Set<String> restrictedPeers) {
-        this.peerIds = peerIds;
-        this.peerNames = peerNames;
+    PeerAdapter(PeerElementActions peerElementActions, List<PeerConnection> peerConnections, Set<String> restrictedPeers) {
+        this.peerConnections = peerConnections;
         this.restrictedPeers = restrictedPeers;
         this.peerElementActions = peerElementActions;
     }
 
     @Override
     public int getCount() {
-        return peerNames.size();
+        return peerConnections.size();
     }
 
     @Override
     public Object getItem(int i) {
-        return peerNames.get(i);
+        return peerConnections.get(i);
     }
 
     @Override
@@ -64,6 +62,8 @@ class PeerAdapter extends BaseAdapter {
         this.position = position;
         final PeerViewHolder holder;
 
+        PeerConnection peerConnection = peerConnections.get(position);
+
         if (convertView == null) {
             LayoutInflater inflater = LayoutInflater.from(parent.getContext());
             convertView = inflater.inflate(R.layout.peer_element, parent, false);
@@ -73,9 +73,9 @@ class PeerAdapter extends BaseAdapter {
             holder = (PeerViewHolder) convertView.getTag();
         }
 
-        holder.peerUsername.setText(peerNames.get(position));
+        holder.peerUsername.setText(peerConnection.getUsername());
 
-        if (restrictedPeers != null && restrictedPeers.contains(peerIds.get(position))) {
+        if (restrictedPeers != null && restrictedPeers.contains(peerConnection.getPeerUniqueId())) {
             setCheckedAutomatically(holder.peerSwitch, false);
         } else {
             setCheckedAutomatically(holder.peerSwitch, true);

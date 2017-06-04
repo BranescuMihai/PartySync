@@ -52,6 +52,8 @@ public class PeerConnection {
     private OutputStream outputStream;
     private InputStream inputStream;
 
+    private boolean connectionDeactivated;
+
     private String peerUniqueId;
     private String username;
     private String host;
@@ -65,6 +67,8 @@ public class PeerConnection {
         this.authenticationFailureActions = authenticationFailureActions;
         this.username = username;
         this.host = host;
+
+        connectionDeactivated = false;
 
         try {
             socket = new Socket(host, port);
@@ -116,6 +120,14 @@ public class PeerConnection {
         return peerUniqueId;
     }
 
+    public boolean isConnectionDeactivated() {
+        return connectionDeactivated;
+    }
+
+    public void setConnectionDeactivated(boolean connectionDeactivated) {
+        this.connectionDeactivated = connectionDeactivated;
+    }
+
     private void startThreads() {
         sendThread = new SendThread();
         sendThread.start();
@@ -164,12 +176,14 @@ public class PeerConnection {
                 try {
                     Log.d(TAG, "Sending messages to " + socket.getInetAddress() + ":" + socket.getLocalPort());
                     while (!Thread.currentThread().isInterrupted()) {
-                        byte[] content = messageQueue.take();
-                        if (content != null) {
-                            try {
-                                sendBytes(content, outputStream);
-                            } catch (IOException e) {
-                                e.printStackTrace();
+                        if(!isConnectionDeactivated()) {
+                            byte[] content = messageQueue.take();
+                            if (content != null) {
+                                try {
+                                    sendBytes(content, outputStream);
+                                } catch (IOException e) {
+                                    e.printStackTrace();
+                                }
                             }
                         }
                     }
@@ -206,42 +220,44 @@ public class PeerConnection {
                 try {
                     Log.d(TAG, "Reading messages from " + socket.getInetAddress() + ":" + socket.getLocalPort());
                     while (!Thread.currentThread().isInterrupted()) {
-                        byte[] content = readBytes(inputStream);
-                        if (content != null) {
+                        if(!isConnectionDeactivated()) {
+                            byte[] content = readBytes(inputStream);
+                            if (content != null) {
 
-                            if (!authenticationCompleted) {
-                                try {
-                                    String decrypted = SecurityHelper.decryptMsg(content);
-                                    if (decrypted.contains("Valid")) {
+                                if (!authenticationCompleted) {
+                                    try {
+                                        String decrypted = SecurityHelper.decryptMsg(content);
+                                        if (decrypted.contains("Valid")) {
 
-                                        String[] split = decrypted.split(":");
-                                        peerUniqueId = split[1];
-                                        saveUniqueIdInSharedPreferences(peerUniqueId);
-                                        authenticationCompleted = true;
+                                            String[] split = decrypted.split(":");
+                                            peerUniqueId = split[1];
+                                            saveUniqueIdInSharedPreferences(peerUniqueId);
+                                            authenticationCompleted = true;
+                                            continue;
+                                        }
+                                    } catch (NoSuchAlgorithmException | InvalidKeyException | NoSuchPaddingException
+                                            | IllegalBlockSizeException | InvalidParameterSpecException
+                                            | BadPaddingException | UnsupportedEncodingException
+                                            | InvalidAlgorithmParameterException e) {
+                                        authenticationFailureActions.onAuthenticationFailed(socket);
+                                        stopThreads();
                                         continue;
                                     }
-                                } catch (NoSuchAlgorithmException | InvalidKeyException | NoSuchPaddingException
-                                        | IllegalBlockSizeException | InvalidParameterSpecException
-                                        | BadPaddingException | UnsupportedEncodingException
-                                        | InvalidAlgorithmParameterException e) {
-                                    authenticationFailureActions.onAuthenticationFailed(socket);
-                                    stopThreads();
-                                    continue;
                                 }
-                            }
 
-                            File photosDirectory = new File(Environment.getExternalStorageDirectory().getPath() + "/Pictures/partySync");
+                                File photosDirectory = new File(Environment.getExternalStorageDirectory().getPath() + "/Pictures/partySync");
 
-                            if (photosDirectory.exists() || photosDirectory.mkdirs()) {
-                                Long tsLong = System.currentTimeMillis() / 1000;
-                                String ts = tsLong.toString();
+                                if (photosDirectory.exists() || photosDirectory.mkdirs()) {
+                                    Long tsLong = System.currentTimeMillis() / 1000;
+                                    String ts = tsLong.toString();
 
-                                File pictureFile = new File(photosDirectory, "image" + ts + ".jpg");
+                                    File pictureFile = new File(photosDirectory, "image" + ts + ".jpg");
 
-                                if (pictureFile.exists() || pictureFile.createNewFile()) {
-                                    FileOutputStream fos = new FileOutputStream(pictureFile);
-                                    fos.write(content);
-                                    fos.close();
+                                    if (pictureFile.exists() || pictureFile.createNewFile()) {
+                                        FileOutputStream fos = new FileOutputStream(pictureFile);
+                                        fos.write(content);
+                                        fos.close();
+                                    }
                                 }
                             }
                         }

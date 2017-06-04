@@ -25,6 +25,7 @@ import com.branes.partysync.actions.PeerListChangeActions;
 import com.branes.partysync.activities.peers.PeerActivity;
 import com.branes.partysync.camera.ObjectObserver;
 import com.branes.partysync.custom_ui_elements.CircularTextView;
+import com.branes.partysync.dependency_injection.DependencyInjection;
 import com.branes.partysync.helper.Constants;
 import com.branes.partysync.helper.SecurityHelper;
 import com.branes.partysync.network_communication.NetworkServiceDiscoveryOperations;
@@ -33,6 +34,8 @@ import com.branes.partysync.network_communication.PeerConnection;
 import java.util.ArrayList;
 import java.util.Observable;
 import java.util.Observer;
+
+import javax.inject.Inject;
 
 /**
  * Copyright (c) 2017 Mihai Branescu
@@ -48,11 +51,15 @@ public class MainActivity extends AppCompatActivity implements MainContract.View
 
     private MainContract.Presenter presenter;
 
-    private NetworkServiceDiscoveryOperations networkServiceDiscoveryOperations;
+    @Inject
+    NetworkServiceDiscoveryOperations networkServiceDiscoveryOperations;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        DependencyInjection.getAppComponent(this).inject(this);
+
         setContentView(R.layout.activity_main);
 
         changeSyncStateButton = (TextView) findViewById(R.id.change_sync_state_button);
@@ -64,7 +71,7 @@ public class MainActivity extends AppCompatActivity implements MainContract.View
         numberOfPeers.setStrokeColor("#ffffff");
         numberOfPeers.setSolidColor("#FFB300");
 
-        networkServiceDiscoveryOperations = new NetworkServiceDiscoveryOperations(this);
+        networkServiceDiscoveryOperations.setPeerListChangeActions(this);
 
         presenter = new MainPresenter(this);
         ObjectObserver.getInstance().addObserver(this);

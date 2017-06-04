@@ -38,14 +38,16 @@ public class NetworkServiceDiscoveryOperations implements AuthenticationFailureA
 
     private PeerListChangeActions peerListChangeActions;
 
-    public NetworkServiceDiscoveryOperations(final PeerListChangeActions peerListChangeActions) {
+    public NetworkServiceDiscoveryOperations(Context context) {
 
         this.communicationToPeers = new ArrayList<>();
         this.communicationFromClients = new ArrayList<>();
 
-        this.peerListChangeActions = peerListChangeActions;
+        nsdManager = (NsdManager) context.getSystemService(Context.NSD_SERVICE);
+    }
 
-        nsdManager = (NsdManager) ((Context) peerListChangeActions).getSystemService(Context.NSD_SERVICE);
+    public void setPeerListChangeActions(PeerListChangeActions peerListChangeActions) {
+        this.peerListChangeActions = peerListChangeActions;
     }
 
     @Override
