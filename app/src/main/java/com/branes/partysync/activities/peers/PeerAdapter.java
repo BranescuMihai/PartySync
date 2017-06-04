@@ -6,7 +6,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.CompoundButton;
-import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
 import android.widget.Switch;
 import android.widget.TextView;
 
@@ -97,12 +97,12 @@ class PeerAdapter extends BaseAdapter {
     private static class PeerViewHolder {
         TextView peerUsername;
         Switch peerSwitch;
-        LinearLayout container;
+        RelativeLayout container;
 
         PeerViewHolder(View itemView) {
             peerUsername = (TextView) itemView.findViewById(R.id.peer_item_text);
             peerSwitch = (Switch) itemView.findViewById(R.id.peer_item_switch);
-            container = (LinearLayout) itemView.findViewById(R.id.peer_item_container);
+            container = (RelativeLayout) itemView.findViewById(R.id.peer_item_container);
         }
     }
 

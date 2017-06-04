@@ -10,8 +10,10 @@
         android:layout_height="wrap_content"
         android:background="@color/colorPrimaryDark"
         android:gravity="center"
+        android:paddingBottom="10dp"
         android:text="@string/peer_activity_title"
-        android:textColor="@color/colorWhite" />
+        android:textColor="@color/colorWhite"
+        android:textSize="20sp" />
 
     <ListView
         android:id="@+id/peer_list"

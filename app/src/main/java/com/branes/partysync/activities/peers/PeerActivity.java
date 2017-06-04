@@ -16,7 +16,7 @@ import java.util.ArrayList;
  */
 public class PeerActivity extends AppCompatActivity implements PeerElementActions {
 
-    private ArrayList<String> names;
+    private ArrayList<String> uniqueIds;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -25,8 +25,8 @@ public class PeerActivity extends AppCompatActivity implements PeerElementAction
 
         ListView peerList = (ListView) findViewById(R.id.peer_list);
 
-        names = getIntent().getStringArrayListExtra(Constants.CLIENT_NAMES);
-        ArrayList<String> uniqueIds = getIntent().getStringArrayListExtra(Constants.CLIENT_IDS);
+        ArrayList<String> names = getIntent().getStringArrayListExtra(Constants.CLIENT_NAMES);
+        uniqueIds = getIntent().getStringArrayListExtra(Constants.CLIENT_IDS);
 
         PeerAdapter peerAdapter = new PeerAdapter(this, names, uniqueIds, Utilities.getUniqueIdFromSharedPreferences(this));
         peerList.setAdapter(peerAdapter);
@@ -34,12 +34,12 @@ public class PeerActivity extends AppCompatActivity implements PeerElementAction
 
     @Override
     public void onPeerElementClicked(int position, boolean isEnabled) {
-        String selectedName = names.get(position);
+        String selectedId = uniqueIds.get(position);
 
         if(isEnabled) {
-            Utilities.removeUniqueIdFromSharedPreferences(this, selectedName);
+            Utilities.removeUniqueIdFromSharedPreferences(this, selectedId);
         } else {
-            Utilities.saveUniqueIdInSharedPreferences(this, selectedName);
+            Utilities.saveUniqueIdInSharedPreferences(this, selectedId);
         }
     }
 }

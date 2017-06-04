@@ -8,6 +8,7 @@ import android.provider.Settings;
 import android.telephony.TelephonyManager;
 import android.util.Log;
 
+import com.branes.partysync.PartySyncApplication;
 import com.branes.partysync.actions.AuthenticationFailureActions;
 import com.branes.partysync.helper.Constants;
 import com.branes.partysync.helper.SecurityHelper;
@@ -276,7 +277,7 @@ public class PeerConnection {
     }
 
     private Context getContext() {
-        return (Context) authenticationFailureActions;
+        return PartySyncApplication.getContext();
     }
 
     private void saveUniqueIdInSharedPreferences(String peerUniqueId) {

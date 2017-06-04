@@ -154,7 +154,7 @@ public class MainActivity extends AppCompatActivity implements MainContract.View
 
             case Constants.REQUIRED_PERMISSIONS:
                 if (grantResults.length > 0) {
-                    for(int grant : grantResults) {
+                    for (int grant : grantResults) {
                         if (grant != PackageManager.PERMISSION_GRANTED) {
                             Toast.makeText(MainActivity.this, getString(R.string.no_permissions_granted), Toast.LENGTH_SHORT).show();
                             checkPermissions();
@@ -176,25 +176,32 @@ public class MainActivity extends AppCompatActivity implements MainContract.View
     private void checkPermissions() {
         int permissionCheckExternalStorage = ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE);
         int permissionCheckWifi = ContextCompat.checkSelfPermission(this, Manifest.permission.CHANGE_WIFI_STATE);
+        int permissionReadPhoneState = ContextCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE);
 
         if (permissionCheckExternalStorage == PackageManager.PERMISSION_GRANTED
-                && permissionCheckWifi == PackageManager.PERMISSION_GRANTED) {
+                && permissionCheckWifi == PackageManager.PERMISSION_GRANTED
+                && permissionReadPhoneState == PackageManager.PERMISSION_GRANTED) {
             startServices();
             return;
         }
 
-        if (permissionCheckExternalStorage != PackageManager.PERMISSION_GRANTED
-                && permissionCheckWifi != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(
-                    this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE,
-                            Manifest.permission.CHANGE_WIFI_STATE}, Constants.REQUIRED_PERMISSIONS);
-        } else if (permissionCheckExternalStorage != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(
-                    this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, Constants.REQUIRED_PERMISSIONS);
-        } else {
-            ActivityCompat.requestPermissions(
-                    this, new String[]{Manifest.permission.CHANGE_WIFI_STATE}, Constants.REQUIRED_PERMISSIONS);
+        ArrayList<String> permissions = new ArrayList<>();
+
+        if (permissionCheckExternalStorage != PackageManager.PERMISSION_GRANTED) {
+            permissions.add(Manifest.permission.READ_EXTERNAL_STORAGE);
         }
+
+        if (permissionCheckWifi != PackageManager.PERMISSION_GRANTED) {
+            permissions.add(Manifest.permission.CHANGE_WIFI_STATE);
+        }
+
+        if (permissionReadPhoneState != PackageManager.PERMISSION_GRANTED) {
+            permissions.add(Manifest.permission.READ_PHONE_STATE);
+        }
+
+        String[] permissionsArray = permissions.toArray(new String[permissions.size()]);
+
+        ActivityCompat.requestPermissions(this, permissionsArray, Constants.REQUIRED_PERMISSIONS);
     }
 
     private void startServices() {
