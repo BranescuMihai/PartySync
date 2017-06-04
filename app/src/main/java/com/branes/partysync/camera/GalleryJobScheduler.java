@@ -13,7 +13,6 @@ import java.io.IOException;
 /**
  * Copyright (c) 2017 Mihai Branescu
  */
-
 @TargetApi(Build.VERSION_CODES.N)
 public class GalleryJobScheduler extends JobService {
 

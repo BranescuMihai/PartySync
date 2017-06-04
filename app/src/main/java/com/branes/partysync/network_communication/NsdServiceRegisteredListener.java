@@ -6,8 +6,10 @@ import android.util.Log;
 
 import com.branes.partysync.actions.ServiceRegisteredListener;
 
-
-public class NsdServiceRegisteredListener implements NsdManager.RegistrationListener {
+/**
+ * Copyright (c) 2017 Mihai Branescu
+ */
+class NsdServiceRegisteredListener implements NsdManager.RegistrationListener {
 
     private static final String TAG = NsdServiceResolvedListener.class.getName();
 

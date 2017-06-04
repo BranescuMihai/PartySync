@@ -15,7 +15,7 @@ import java.util.List;
 class PeerConnectionIncoming extends Thread {
 
     private static final String TAG = PeerConnectionIncoming.class.getName();
-    
+
     private NetworkServiceDiscoveryOperations networkServiceDiscoveryOperations = null;
 
     private ServerSocket serverSocket = null;

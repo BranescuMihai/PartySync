@@ -11,6 +11,7 @@ import android.widget.TextView;
  * Copyright (c) 2017 Mihai Branescu
  */
 public class CircularTextView extends TextView {
+
     private float strokeWidth;
     int strokeColor, solidColor;
 

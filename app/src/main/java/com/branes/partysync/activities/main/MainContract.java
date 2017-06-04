@@ -5,8 +5,7 @@ import android.content.Context;
 /**
  * Copyright (c) 2017 Mihai Branescu
  */
-
-public interface MainContract {
+interface MainContract {
 
     interface View {
         Context getContext();

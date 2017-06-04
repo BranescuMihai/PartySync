@@ -6,6 +6,7 @@ import java.util.Observable;
  * Copyright (c) 2017 Mihai Branescu
  */
 public class ObjectObserver extends Observable {
+
     private static ObjectObserver instance = new ObjectObserver();
 
     public static ObjectObserver getInstance() {
@@ -15,7 +16,7 @@ public class ObjectObserver extends Observable {
     private ObjectObserver() {
     }
 
-    public void updateValue(Object data) {
+    void updateValue(Object data) {
         synchronized (this) {
             setChanged();
             notifyObservers(data);

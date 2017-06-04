@@ -11,7 +11,9 @@ import com.branes.partysync.helper.Utilities;
 
 import java.util.ArrayList;
 
-
+/**
+ * Copyright (c) 2017 Mihai Branescu
+ */
 public class PeerActivity extends AppCompatActivity implements PeerElementActions {
 
     private ArrayList<String> names;

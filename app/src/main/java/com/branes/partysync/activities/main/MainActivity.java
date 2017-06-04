@@ -34,6 +34,9 @@ import java.util.ArrayList;
 import java.util.Observable;
 import java.util.Observer;
 
+/**
+ * Copyright (c) 2017 Mihai Branescu
+ */
 public class MainActivity extends AppCompatActivity implements MainContract.View, Observer, PeerListChangeActions {
 
     private static final String TAG = MainActivity.class.getName();

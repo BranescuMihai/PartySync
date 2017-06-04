@@ -11,19 +11,15 @@ import com.branes.partysync.activities.main.MainActivity;
 /**
  * Copyright (c) 2017 Mihai Branescu
  */
-
-
 public class SplashActivity extends Activity {
 
-    /**
-     * Called when the activity is first created.
-     */
+    private final static int SPLASH_DISPLAY_LENGTH = 1500;
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.splash_screen);
 
-        int SPLASH_DISPLAY_LENGTH = 1500;
         new Handler().postDelayed(new Runnable() {
             @Override
             public void run() {

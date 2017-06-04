@@ -13,7 +13,6 @@ import com.branes.partysync.camera.GalleryJobScheduler;
 /**
  * Copyright (c) 2017 Mihai Branescu
  */
-
 class MainPresenter implements MainContract.Presenter {
 
     private MainContract.View view;

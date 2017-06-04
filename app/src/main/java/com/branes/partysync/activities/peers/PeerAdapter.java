@@ -16,7 +16,9 @@ import com.branes.partysync.actions.PeerElementActions;
 import java.util.ArrayList;
 import java.util.Set;
 
-
+/**
+ * Copyright (c) 2017 Mihai Branescu
+ */
 class PeerAdapter extends BaseAdapter {
 
     private ArrayList<String> peerNames;
