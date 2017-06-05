@@ -1,7 +1,7 @@
 package com.branes.partysync.dependency_injection;
 
 /**
- * Copyright © 2017 Deutsche Bank. All rights reserved.
+ * Copyright (c) 2017 Mihai Branescu
  */
 public interface AppComponentProvider {
 

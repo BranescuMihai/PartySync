@@ -3,6 +3,7 @@ package com.branes.partysync.network_communication;
 import android.content.Context;
 import android.net.nsd.NsdManager;
 import android.net.nsd.NsdServiceInfo;
+import android.os.Handler;
 import android.util.Log;
 
 import com.branes.partysync.actions.AuthenticationFailureActions;
@@ -16,15 +17,16 @@ import com.branes.partysync.helper.Utilities;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 /**
  * Copyright (c) 2017 Mihai Branescu
  */
-public class NetworkServiceDiscoveryOperations implements AuthenticationFailureActions,
+public class NetworkServiceManager implements AuthenticationFailureActions,
         ServiceResolvedActions, ServiceDiscoveredActions, ServiceRegisteredListener {
 
-    private static final String TAG = NetworkServiceDiscoveryOperations.class.getName();
+    private static final String TAG = NetworkServiceManager.class.getName();
 
     private String serviceName;
 
@@ -38,12 +40,16 @@ public class NetworkServiceDiscoveryOperations implements AuthenticationFailureA
 
     private PeerListChangeActions peerListChangeActions;
 
-    public NetworkServiceDiscoveryOperations(Context context) {
+    private HashMap<String, Integer> failedToResolveServices;
+
+    public NetworkServiceManager(Context context) {
 
         this.communicationToPeers = new ArrayList<>();
         this.communicationFromClients = new ArrayList<>();
 
         nsdManager = (NsdManager) context.getSystemService(Context.NSD_SERVICE);
+
+        failedToResolveServices = new HashMap<>();
     }
 
     public void setPeerListChangeActions(PeerListChangeActions peerListChangeActions) {
@@ -57,7 +63,7 @@ public class NetworkServiceDiscoveryOperations implements AuthenticationFailureA
 
     @Override
     public void onServiceFound(NsdServiceInfo nsdServiceInfo) {
-        nsdManager.resolveService(nsdServiceInfo, new NsdServiceResolvedListener(serviceName, NetworkServiceDiscoveryOperations.this));
+        nsdManager.resolveService(nsdServiceInfo, new NsdServiceResolvedListener(serviceName, NetworkServiceManager.this));
     }
 
     @Override
@@ -73,22 +79,55 @@ public class NetworkServiceDiscoveryOperations implements AuthenticationFailureA
     }
 
     @Override
-    public void onServiceResolved(NsdServiceInfo serviceInfo, String serviceName) {
+    public void onServiceResolved(NsdServiceInfo serviceInfo) {
         String host = retrieveHost(serviceInfo);
 
         int port = serviceInfo.getPort();
         String username = serviceInfo.getServiceName().split("-")[2];
 
         if (getChatClientIfExists(host) == null) {
-            PeerConnection peerConnection = new PeerConnection(this, host, port, username);
-            if (peerConnection.getSocket() != null) {
-                communicationToPeers.add(peerConnection);
+            final PeerConnection peerConnection = new PeerConnection(this, host, port, username);
+            Handler hand = new Handler();
+            hand.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    if (peerConnection.getSocket() != null) {
+                        communicationToPeers.add(peerConnection);
+                        peerListChangeActions.onPeerListChanged();
+                    }
+                }
+            }, 600);
+            Log.i(TAG, "A service has been discovered on " + host + ":" + port);
+        }
+    }
 
-                peerListChangeActions.onPeerListChanged();
-            }
+    @Override
+    public void onServiceFailed(final NsdServiceInfo serviceInfo) {
+
+        String foreignServiceName = serviceInfo.getServiceName();
+        if (foreignServiceName.equals(serviceName)) {
+            return;
         }
 
-        Log.i(TAG, "A service has been discovered on " + host + ":" + port);
+        if (!failedToResolveServices.containsKey(foreignServiceName)) {
+            failedToResolveServices.put(foreignServiceName, 1);
+        } else if (failedToResolveServices.get(foreignServiceName) < 3) {
+            failedToResolveServices.put(foreignServiceName, failedToResolveServices.get(foreignServiceName) + 1);
+        } else {
+            //we allow only three retries
+            failedToResolveServices.remove(foreignServiceName);
+        }
+
+        //if it hasn't been removed
+        if (failedToResolveServices.containsKey(foreignServiceName)) {
+            Handler handler = new Handler();
+            handler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    nsdManager.resolveService(serviceInfo, new NsdServiceResolvedListener(serviceName, NetworkServiceManager.this));
+                }
+            }, 1000 * failedToResolveServices.get(foreignServiceName));
+        }
     }
 
     @Override

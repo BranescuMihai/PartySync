@@ -16,12 +16,12 @@ class PeerConnectionIncoming extends Thread {
 
     private static final String TAG = PeerConnectionIncoming.class.getName();
 
-    private NetworkServiceDiscoveryOperations networkServiceDiscoveryOperations = null;
+    private NetworkServiceManager networkServiceManager = null;
 
     private ServerSocket serverSocket = null;
 
-    PeerConnectionIncoming(NetworkServiceDiscoveryOperations networkServiceDiscoveryOperations) {
-        this.networkServiceDiscoveryOperations = networkServiceDiscoveryOperations;
+    PeerConnectionIncoming(NetworkServiceManager networkServiceManager) {
+        this.networkServiceManager = networkServiceManager;
         try {
             serverSocket = new ServerSocket(0);
         } catch (IOException ioException) {
@@ -38,9 +38,9 @@ class PeerConnectionIncoming extends Thread {
                 Log.i(TAG, "Waiting for a connection...");
                 Socket socket = serverSocket.accept();
                 Log.i(TAG, "Received a connection request from: " + socket.getInetAddress() + ":" + socket.getLocalPort());
-                List<PeerConnection> communicationFromClients = networkServiceDiscoveryOperations.getCommunicationFromClients();
-                communicationFromClients.add(new PeerConnection(networkServiceDiscoveryOperations, socket));
-                networkServiceDiscoveryOperations.setCommunicationFromClients(communicationFromClients);
+                List<PeerConnection> communicationFromClients = networkServiceManager.getCommunicationFromClients();
+                communicationFromClients.add(new PeerConnection(networkServiceManager, socket));
+                networkServiceManager.setCommunicationFromClients(communicationFromClients);
             }
         } catch (IOException ioException) {
             Log.e(TAG, "An error has occurred during server run: " + ioException.getMessage());

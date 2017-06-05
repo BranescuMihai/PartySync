@@ -8,7 +8,7 @@ import android.net.nsd.NsdServiceInfo;
 public interface ServiceRegisteredListener {
 
     /**
-     * Set the name of the service
+     * Set the name of the service when a new service was registered
      */
     void onServiceRegistered(NsdServiceInfo nsdServiceInfo);
 }

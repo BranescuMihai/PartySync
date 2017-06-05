@@ -4,6 +4,7 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Environment;
+import android.os.Handler;
 import android.provider.Settings;
 import android.telephony.TelephonyManager;
 import android.util.Log;
@@ -70,18 +71,21 @@ public class PeerConnection {
 
         connectionDeactivated = false;
 
-        try {
-            socket = new Socket(host, port);
-            Log.d(TAG, "A socket has been created on " + socket.getInetAddress() + ":" + socket.getLocalPort());
-        } catch (IOException ioException) {
-            Log.e(TAG, "An exception has occurred while creating the socket: " + ioException.getMessage());
-            if (Constants.DEBUG) {
-                ioException.printStackTrace();
+        Handler hand = new Handler();
+        hand.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    socket = new Socket(host, port);
+                    Log.d(TAG, "A socket has been created on " + socket.getInetAddress() + ":" + socket.getLocalPort());
+                } catch (IOException ioException) {
+                    Log.e(TAG, "An exception has occurred while creating the socket: " + ioException.getMessage());
+                }
+                if (socket != null) {
+                    startThreads();
+                }
             }
-        }
-        if (socket != null) {
-            startThreads();
-        }
+        }, 500);
     }
 
     PeerConnection(AuthenticationFailureActions authenticationFailureActions, Socket socket) {
@@ -176,7 +180,7 @@ public class PeerConnection {
                 try {
                     Log.d(TAG, "Sending messages to " + socket.getInetAddress() + ":" + socket.getLocalPort());
                     while (!Thread.currentThread().isInterrupted()) {
-                        if(!isConnectionDeactivated()) {
+                        if (!isConnectionDeactivated()) {
                             byte[] content = messageQueue.take();
                             if (content != null) {
                                 try {
@@ -220,7 +224,7 @@ public class PeerConnection {
                 try {
                     Log.d(TAG, "Reading messages from " + socket.getInetAddress() + ":" + socket.getLocalPort());
                     while (!Thread.currentThread().isInterrupted()) {
-                        if(!isConnectionDeactivated()) {
+                        if (!isConnectionDeactivated()) {
                             byte[] content = readBytes(inputStream);
                             if (content != null) {
 

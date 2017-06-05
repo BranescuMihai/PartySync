@@ -4,7 +4,7 @@ import android.content.Context;
 import android.support.annotation.NonNull;
 
 /**
- * Copyright © 2017 Deutsche Bank. All rights reserved.
+ * Copyright (c) 2017 Mihai Branescu
  */
 public final class DependencyInjection {
 

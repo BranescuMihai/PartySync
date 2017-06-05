@@ -12,7 +12,7 @@ import com.branes.partysync.dependency_injection.DaggerAppComponent;
 /**
  * Copyright (c) 2017 Mihai Branescu
  */
-public class PartySyncApplication extends Application implements AppComponentProvider{
+public class PartySyncApplication extends Application implements AppComponentProvider {
 
     @SuppressLint("StaticFieldLeak")
     private static Context mContext;

@@ -24,6 +24,7 @@ class NsdServiceResolvedListener implements NsdManager.ResolveListener {
     @Override
     public void onResolveFailed(NsdServiceInfo serviceInfo, int errorCode) {
         Log.e(TAG, "Resolve failed: " + errorCode);
+        serviceResolvedActions.onServiceFailed(serviceInfo);
     }
 
     @Override
@@ -35,6 +36,6 @@ class NsdServiceResolvedListener implements NsdManager.ResolveListener {
             return;
         }
 
-        serviceResolvedActions.onServiceResolved(serviceInfo, serviceName);
+        serviceResolvedActions.onServiceResolved(serviceInfo);
     }
 }

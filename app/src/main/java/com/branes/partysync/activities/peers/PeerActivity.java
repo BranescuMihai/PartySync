@@ -8,7 +8,7 @@ import com.branes.partysync.R;
 import com.branes.partysync.actions.PeerElementActions;
 import com.branes.partysync.dependency_injection.DependencyInjection;
 import com.branes.partysync.helper.Utilities;
-import com.branes.partysync.network_communication.NetworkServiceDiscoveryOperations;
+import com.branes.partysync.network_communication.NetworkServiceManager;
 import com.branes.partysync.network_communication.PeerConnection;
 
 import java.util.List;
@@ -23,7 +23,7 @@ public class PeerActivity extends AppCompatActivity implements PeerElementAction
     private List<PeerConnection> peerConnections;
 
     @Inject
-    NetworkServiceDiscoveryOperations networkServiceDiscoveryOperations;
+    NetworkServiceManager networkServiceManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,7 +35,7 @@ public class PeerActivity extends AppCompatActivity implements PeerElementAction
 
         ListView peerList = (ListView) findViewById(R.id.peer_list);
 
-        peerConnections = networkServiceDiscoveryOperations.getCommunicationToPeers();
+        peerConnections = networkServiceManager.getCommunicationToPeers();
 
         PeerAdapter peerAdapter = new PeerAdapter(this, peerConnections, Utilities.getUniqueIdFromSharedPreferences(this));
         peerList.setAdapter(peerAdapter);
@@ -45,7 +45,7 @@ public class PeerActivity extends AppCompatActivity implements PeerElementAction
     public void onPeerElementClicked(int position, boolean isEnabled) {
         String selectedId = peerConnections.get(position).getPeerUniqueId();
 
-        if(isEnabled) {
+        if (isEnabled) {
             peerConnections.get(position).setConnectionDeactivated(false);
             Utilities.removeUniqueIdFromSharedPreferences(this, selectedId);
         } else {

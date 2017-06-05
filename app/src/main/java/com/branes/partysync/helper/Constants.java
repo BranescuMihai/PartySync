@@ -14,9 +14,6 @@ public class Constants {
     final public static int MESSAGE_QUEUE_CAPACITY = 50;
     final public static int REQUIRED_PERMISSIONS = 100;
 
-    final public static String CLIENT_NAMES = "CLIENT_NAMES";
-    final public static String CLIENT_IDS = "CLIENT_IDS";
-
     final static int ALPHABET_LENGTH = 26;
     final static char FIRST_LETTER = 'a';
     final public static int IDENTIFIER_LENGTH = 5;

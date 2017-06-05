@@ -4,7 +4,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 
 import com.branes.partysync.helper.Constants;
-import com.branes.partysync.network_communication.NetworkServiceDiscoveryOperations;
+import com.branes.partysync.network_communication.NetworkServiceManager;
 
 import javax.inject.Singleton;
 
@@ -12,7 +12,7 @@ import dagger.Module;
 import dagger.Provides;
 
 /**
- * Copyright © 2017 Deutsche Bank. All rights reserved.
+ * Copyright (c) 2017 Mihai Branescu
  */
 @Module
 public class AppModule {
@@ -35,7 +35,7 @@ public class AppModule {
 
     @Provides
     @Singleton
-    NetworkServiceDiscoveryOperations provideNetworkServiceDiscoveryOperations(Context context) {
-        return new NetworkServiceDiscoveryOperations(context);
+    NetworkServiceManager provideNetworkServiceDiscoveryOperations(Context context) {
+        return new NetworkServiceManager(context);
     }
 }

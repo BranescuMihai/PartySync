@@ -7,5 +7,13 @@ import android.net.nsd.NsdServiceInfo;
  */
 public interface ServiceResolvedActions {
 
-    void onServiceResolved(NsdServiceInfo serviceInfo, String serviceName);
+    /**
+     * Transmit to the manager that a new service was resolved
+     */
+    void onServiceResolved(NsdServiceInfo serviceInfo);
+
+    /**
+     * Transmit to the manager that a service couldn't be resolved, so it can retry
+     */
+    void onServiceFailed(NsdServiceInfo serviceInfo);
 }
