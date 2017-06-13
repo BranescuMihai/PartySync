@@ -28,8 +28,9 @@ public class NetworkServiceManager implements AuthenticationFailureActions,
 
     private static final String TAG = NetworkServiceManager.class.getName();
 
-    private String serviceName;
+    public String personalUsername;
 
+    private String serviceName;
     private PeerConnectionIncoming peerConnectionIncoming;
     private List<PeerConnection> communicationToPeers;
     private List<PeerConnection> communicationFromClients;
@@ -103,8 +104,7 @@ public class NetworkServiceManager implements AuthenticationFailureActions,
 
     @Override
     public void onServiceFailed(final NsdServiceInfo serviceInfo) {
-
-        String foreignServiceName = serviceInfo.getServiceName();
+        final String foreignServiceName = serviceInfo.getServiceName();
         if (foreignServiceName.equals(serviceName)) {
             return;
         }
@@ -143,6 +143,12 @@ public class NetworkServiceManager implements AuthenticationFailureActions,
 
     public void registerNetworkService(String name) throws Exception {
 
+        if (peerConnectionIncoming != null && peerConnectionIncoming.isAlive()) {
+            return;
+        }
+
+        personalUsername = name;
+
         peerConnectionIncoming = new PeerConnectionIncoming(this);
         ServerSocket serverSocket = peerConnectionIncoming.getServerSocket();
         if (serverSocket == null) {
@@ -165,13 +171,15 @@ public class NetworkServiceManager implements AuthenticationFailureActions,
     }
 
     public void unregisterNetworkService() {
-        Log.v(TAG, "Unregister Network Service");
-        nsdManager.unregisterService(registrationListener);
-        for (PeerConnection communicationFromClient : communicationFromClients) {
-            communicationFromClient.stopThreads();
+        if (peerConnectionIncoming != null && peerConnectionIncoming.isAlive()) {
+            Log.v(TAG, "Unregister Network Service");
+            nsdManager.unregisterService(registrationListener);
+            for (PeerConnection communicationFromClient : communicationFromClients) {
+                communicationFromClient.stopThreads();
+            }
+            communicationFromClients.clear();
+            peerConnectionIncoming.stopThread();
         }
-        communicationFromClients.clear();
-        peerConnectionIncoming.stopThread();
     }
 
     public void startNetworkServiceDiscovery() {
@@ -181,14 +189,17 @@ public class NetworkServiceManager implements AuthenticationFailureActions,
     }
 
     public void stopNetworkServiceDiscovery() {
-        Log.v(TAG, "Stop Network Service Discovery");
-        nsdManager.stopServiceDiscovery(discoveryListener);
+        if (discoveryListener != null) {
+            Log.v(TAG, "Stop Network Service Discovery");
+            nsdManager.stopServiceDiscovery(discoveryListener);
+            discoveryListener = null;
 
-        for (PeerConnection communicationToServer : communicationToPeers) {
-            communicationToServer.stopThreads();
+            for (PeerConnection communicationToServer : communicationToPeers) {
+                communicationToServer.stopThreads();
+            }
+            communicationToPeers.clear();
+            peerListChangeActions.onPeerListChanged();
         }
-        communicationToPeers.clear();
-        peerListChangeActions.onPeerListChanged();
     }
 
     public List<PeerConnection> getCommunicationToPeers() {

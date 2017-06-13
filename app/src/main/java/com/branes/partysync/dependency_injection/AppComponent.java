@@ -3,6 +3,7 @@ package com.branes.partysync.dependency_injection;
 import com.branes.partysync.PartySyncApplication;
 import com.branes.partysync.activities.main.MainPresenter;
 import com.branes.partysync.activities.peers.PeerActivity;
+import com.branes.partysync.network_communication.WifiStateChangedBroadcastReceiver;
 
 import javax.inject.Singleton;
 
@@ -20,5 +21,7 @@ public interface AppComponent {
     void inject(MainPresenter mainPresenter);
 
     void inject(PeerActivity peerActivity);
+
+    void inject(WifiStateChangedBroadcastReceiver wifiStateChangedBroadcastReceiver);
 
 }

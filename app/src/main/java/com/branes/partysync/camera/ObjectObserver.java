@@ -16,7 +16,7 @@ public class ObjectObserver extends Observable {
     private ObjectObserver() {
     }
 
-    void updateValue(Object data) {
+    public void updateValue(Object data) {
         synchronized (this) {
             setChanged();
             notifyObservers(data);

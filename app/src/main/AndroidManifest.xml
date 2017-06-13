@@ -8,8 +8,8 @@
     <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
     <uses-permission android:name="android.permission.CAMERA" />
-    <uses-feature android:name="android.hardware.camera" />
-    <uses-feature android:name="android.hardware.camera.autofocus" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
 
     <application
         android:name=".PartySyncApplication"
@@ -39,13 +39,8 @@
                 <action android:name="android.intent.action.MEDIA_SCANNER_SCAN_FILE" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <data android:mimeType="*/*" />
-
             </intent-filter>
         </receiver>
-
-        <service
-            android:name=".helper.GalleryMonitorIntentService"
-            android:exported="false"/>
 
         <service
             android:name=".camera.GalleryJobScheduler"

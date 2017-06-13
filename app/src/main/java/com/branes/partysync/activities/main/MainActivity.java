@@ -3,6 +3,7 @@ package com.branes.partysync.activities.main;
 import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.net.wifi.WifiManager;
@@ -23,6 +24,7 @@ import com.branes.partysync.activities.peers.PeerActivity;
 import com.branes.partysync.custom_ui_elements.CircularTextView;
 import com.branes.partysync.helper.Constants;
 import com.branes.partysync.helper.SecurityHelper;
+import com.branes.partysync.network_communication.WifiStateChangedBroadcastReceiver;
 
 import java.util.ArrayList;
 
@@ -35,6 +37,7 @@ public class MainActivity extends AppCompatActivity implements MainContract.View
     private EditText insertPassword;
     private EditText insertUsername;
     private CircularTextView numberOfPeers;
+    private WifiStateChangedBroadcastReceiver wifiStateChangedBroadcastReceiver;
 
     private MainContract.Presenter presenter;
 
@@ -63,6 +66,12 @@ public class MainActivity extends AppCompatActivity implements MainContract.View
         if (savedInstanceState.getBoolean(Constants.SYNC_STATUS)) {
             checkPermissions();
         }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        unregisterReceiver(wifiStateChangedBroadcastReceiver);
     }
 
     @Override
@@ -211,6 +220,14 @@ public class MainActivity extends AppCompatActivity implements MainContract.View
         wifiManager.setWifiEnabled(true);
 
         presenter.startServices();
+
+        final IntentFilter filters = new IntentFilter();
+        filters.addAction("android.net.wifi.WIFI_STATE_CHANGED");
+        filters.addAction("android.net.wifi.STATE_CHANGE");
+
+        wifiStateChangedBroadcastReceiver = new WifiStateChangedBroadcastReceiver(this);
+        registerReceiver(wifiStateChangedBroadcastReceiver, filters);
+
         changeSyncStateButton.setText(getResources().getString(R.string.stop_sync));
     }
 
