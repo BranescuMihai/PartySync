@@ -11,11 +11,18 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.os.PersistableBundle;
 import android.support.annotation.NonNull;
+import android.support.design.widget.NavigationView;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.view.GravityCompat;
+import android.support.v4.widget.DrawerLayout;
+import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.EditText;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -25,13 +32,15 @@ import com.branes.partysync.custom_ui_elements.CircularTextView;
 import com.branes.partysync.helper.Constants;
 import com.branes.partysync.helper.SecurityHelper;
 import com.branes.partysync.network_communication.WifiStateChangedBroadcastReceiver;
+import com.facebook.Profile;
+import com.makeramen.roundedimageview.RoundedTransformationBuilder;
+import com.squareup.picasso.Picasso;
+import com.squareup.picasso.Transformation;
 
 import java.util.ArrayList;
 
-/**
- * Copyright (c) 2017 Mihai Branescu
- */
-public class MainActivity extends AppCompatActivity implements MainContract.View {
+public class MainActivity extends AppCompatActivity
+        implements NavigationView.OnNavigationItemSelectedListener, MainContract.View {
 
     private TextView changeSyncStateButton;
     private EditText insertPassword;
@@ -69,9 +78,45 @@ public class MainActivity extends AppCompatActivity implements MainContract.View
     }
 
     @Override
+    public void onBackPressed() {
+        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        if (drawer.isDrawerOpen(GravityCompat.START)) {
+            drawer.closeDrawer(GravityCompat.START);
+        } else {
+            super.onBackPressed();
+        }
+    }
+
+    @SuppressWarnings("StatementWithEmptyBody")
+    @Override
+    public boolean onNavigationItemSelected(MenuItem item) {
+        // Handle navigation view item clicks here.
+        int id = item.getItemId();
+
+        if (id == R.id.nav_peers) {
+            if (!presenter.arePeersConnected()) {
+                Toast.makeText(this, getString(R.string.no_peers_connected), Toast.LENGTH_SHORT).show();
+            } else {
+                Intent startPeerActivity = new Intent(this, PeerActivity.class);
+                startActivity(startPeerActivity);
+            }
+        } else if (id == R.id.nav_gallery) {
+            Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+            Uri uri = Uri.parse(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).getPath()
+                    + "/partySync/");
+            intent.setDataAndType(uri, "image/*");
+            startActivity(Intent.createChooser(intent, "Open folder"));
+        }
+
+        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        drawer.closeDrawer(GravityCompat.START);
+        return true;
+    }
+
+    @Override
     protected void onDestroy() {
         super.onDestroy();
-        if(wifiStateChangedBroadcastReceiver != null) {
+        if (wifiStateChangedBroadcastReceiver != null) {
             unregisterReceiver(wifiStateChangedBroadcastReceiver);
         }
     }
@@ -102,10 +147,10 @@ public class MainActivity extends AppCompatActivity implements MainContract.View
             String password = insertPassword.getText().toString();
 
             if (password.length() < 5) {
-                Toast.makeText(MainActivity.this, getString(R.string.password_error), Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, getString(R.string.password_error), Toast.LENGTH_SHORT).show();
             } else {
                 if (insertGroupName.getText().length() < 4) {
-                    Toast.makeText(MainActivity.this, getString(R.string.group_name_error), Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, getString(R.string.group_name_error), Toast.LENGTH_SHORT).show();
                 } else {
                     SecurityHelper.initialize(password);
                     disableFields();
@@ -130,14 +175,6 @@ public class MainActivity extends AppCompatActivity implements MainContract.View
         insertGroupName.setEnabled(false);
     }
 
-    public void galleryButtonClicked(View view) {
-        Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
-        Uri uri = Uri.parse(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).getPath()
-                + "/partySync/");
-        intent.setDataAndType(uri, "image/*");
-        startActivity(Intent.createChooser(intent, "Open folder"));
-    }
-
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
@@ -147,14 +184,14 @@ public class MainActivity extends AppCompatActivity implements MainContract.View
                 if (grantResults.length > 0) {
                     for (int grant : grantResults) {
                         if (grant != PackageManager.PERMISSION_GRANTED) {
-                            Toast.makeText(MainActivity.this, getString(R.string.no_permissions_granted), Toast.LENGTH_SHORT).show();
+                            Toast.makeText(this, getString(R.string.no_permissions_granted), Toast.LENGTH_SHORT).show();
                             checkPermissions();
                             break;
                         }
                     }
                     startServices();
                 } else {
-                    Toast.makeText(MainActivity.this, getString(R.string.no_permissions_granted), Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, getString(R.string.no_permissions_granted), Toast.LENGTH_SHORT).show();
                     checkPermissions();
                 }
                 break;
@@ -164,18 +201,55 @@ public class MainActivity extends AppCompatActivity implements MainContract.View
         }
     }
 
-    public void peersButtonClicked(View view) {
+    private void initViews() {
 
-        if (!presenter.arePeersConnected()) {
-            Toast.makeText(MainActivity.this, getString(R.string.no_peers_connected), Toast.LENGTH_SHORT).show();
-            return;
+        final DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
+                this, drawer, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
+        drawer.addDrawerListener(toggle);
+        toggle.syncState();
+
+        NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
+        navigationView.setNavigationItemSelectedListener(this);
+
+        ImageView menuButton = (ImageView) findViewById(R.id.menu_button);
+        menuButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (drawer.isDrawerOpen(GravityCompat.START)) {
+                    drawer.closeDrawer(GravityCompat.START);
+                } else {
+                    drawer.openDrawer(GravityCompat.START);
+                }
+            }
+        });
+
+        LinearLayout navHeader = (LinearLayout) navigationView.getHeaderView(0);
+        TextView navHeaderTitle = (TextView) navHeader.findViewById(R.id.nav_header_title);
+        ImageView navHeaderPicture = (ImageView) navHeader.findViewById(R.id.nav_header_picture);
+
+        Profile profile = Profile.getCurrentProfile();
+
+        Uri pictureFromFb = profile.getProfilePictureUri(160, 160);
+        if (pictureFromFb != null) {
+            Transformation transformation = new RoundedTransformationBuilder()
+                    .cornerRadiusDp(40)
+                    .oval(false)
+                    .build();
+
+            Picasso.with(this)
+                    .load(pictureFromFb)
+                    .fit()
+                    .transform(transformation)
+                    .into(navHeaderPicture);
+        } else {
+            navHeaderPicture.setImageDrawable(ContextCompat.getDrawable(this, R.mipmap.group_photo_backup));
         }
 
-        Intent startPeerActivity = new Intent(MainActivity.this, PeerActivity.class);
-        startActivity(startPeerActivity);
-    }
+        if (profile.getName() != null) {
+            navHeaderTitle.setText(profile.getName());
+        }
 
-    private void initViews() {
         changeSyncStateButton = (TextView) findViewById(R.id.change_sync_state_button);
         insertPassword = (EditText) findViewById(R.id.insert_password);
         insertGroupName = (EditText) findViewById(R.id.insert_group_name);

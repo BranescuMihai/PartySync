@@ -13,6 +13,8 @@ import com.facebook.FacebookException;
 import com.facebook.login.LoginResult;
 import com.facebook.login.widget.LoginButton;
 
+import java.util.Arrays;
+
 /**
  * Copyright © 2017 Deutsche Bank. All rights reserved.
  */
@@ -28,7 +30,7 @@ public class LoginActivity extends AppCompatActivity {
         callbackManager = CallbackManager.Factory.create();
 
         loginButton = (LoginButton) findViewById(R.id.login_button);
-        loginButton.setReadPermissions("email");
+        loginButton.setReadPermissions(Arrays.asList("public_profile", "email"));
 
         if(AccessToken.getCurrentAccessToken() != null) {
             Intent mainIntent = new Intent(LoginActivity.this, MainActivity.class);
