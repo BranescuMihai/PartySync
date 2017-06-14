@@ -6,12 +6,14 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.CompoundButton;
+import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.Switch;
 import android.widget.TextView;
 
 import com.branes.partysync.R;
 import com.branes.partysync.actions.PeerElementActions;
+import com.branes.partysync.helper.Utilities;
 import com.branes.partysync.network_communication.PeerConnection;
 
 import java.util.List;
@@ -74,6 +76,7 @@ class PeerAdapter extends BaseAdapter {
         }
 
         holder.peerUsername.setText(peerConnection.getUsername());
+        Utilities.loadRoundedImage(convertView.getContext(), peerConnection.getProfilePictureUri(), holder.peerImage);
 
         if (restrictedPeers != null && restrictedPeers.contains(peerConnection.getPeerUniqueId())) {
             setCheckedAutomatically(holder.peerSwitch, false);
@@ -97,11 +100,13 @@ class PeerAdapter extends BaseAdapter {
     private static class PeerViewHolder {
         TextView peerUsername;
         Switch peerSwitch;
+        ImageView peerImage;
         RelativeLayout container;
 
         PeerViewHolder(View itemView) {
             peerUsername = (TextView) itemView.findViewById(R.id.peer_item_text);
             peerSwitch = (Switch) itemView.findViewById(R.id.peer_item_switch);
+            peerImage = (ImageView) itemView.findViewById(R.id.peer_item_image);
             container = (RelativeLayout) itemView.findViewById(R.id.peer_item_container);
         }
     }

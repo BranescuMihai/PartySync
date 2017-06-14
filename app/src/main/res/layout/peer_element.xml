@@ -6,11 +6,22 @@
     android:background="@color/colorLight"
     android:paddingTop="10dp">
 
+    <ImageView
+        android:id="@+id/peer_item_image"
+        android:paddingTop="10dp"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:layout_centerVertical="true"/>
+
     <TextView
         android:id="@+id/peer_item_text"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_centerVertical="true"
+        android:layout_toEndOf="@id/peer_item_image"
+        android:layout_toRightOf="@id/peer_item_image"
+        android:ellipsize="end"
+        android:maxLines="1"
         android:paddingEnd="55dp"
         android:paddingLeft="10dp"
         android:paddingRight="45dp"

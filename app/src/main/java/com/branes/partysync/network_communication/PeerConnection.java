@@ -3,6 +3,7 @@ package com.branes.partysync.network_communication;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.net.Uri;
 import android.os.Environment;
 import android.os.Handler;
 import android.provider.Settings;
@@ -13,6 +14,7 @@ import com.branes.partysync.PartySyncApplication;
 import com.branes.partysync.actions.AuthenticationFailureActions;
 import com.branes.partysync.helper.Constants;
 import com.branes.partysync.helper.SecurityHelper;
+import com.facebook.Profile;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -56,17 +58,17 @@ public class PeerConnection {
     private boolean connectionDeactivated;
 
     private String peerUniqueId;
-    private String username;
+    private String profileName;
+    private String profilePicture;
     private String host;
 
     private AuthenticationFailureActions authenticationFailureActions;
 
     private BlockingQueue<byte[]> messageQueue = new ArrayBlockingQueue<>(Constants.MESSAGE_QUEUE_CAPACITY);
 
-    PeerConnection(AuthenticationFailureActions authenticationFailureActions, final String host, final int port, String username) {
+    PeerConnection(AuthenticationFailureActions authenticationFailureActions, final String host, final int port) {
 
         this.authenticationFailureActions = authenticationFailureActions;
-        this.username = username;
         this.host = host;
 
         connectionDeactivated = false;
@@ -109,7 +111,11 @@ public class PeerConnection {
     }
 
     public String getUsername() {
-        return username;
+        return profileName;
+    }
+
+    public Uri getProfilePictureUri() {
+        return Uri.parse(profilePicture);
     }
 
     String getHost() {
@@ -169,7 +175,17 @@ public class PeerConnection {
             }
 
             try {
-                sendInformation(SecurityHelper.encryptMsg("Valid:" + getDeviceId()));
+                Profile profile = Profile.getCurrentProfile();
+                String fbName = "unknown";
+                Uri pictureFromFb = new Uri.Builder().build();
+                if (profile.getName() != null) {
+                    fbName = profile.getName();
+                    pictureFromFb = profile.getProfilePictureUri(160, 160);
+                }
+
+                sendInformation(SecurityHelper.encryptMsg("Valid::" + fbName + "::"
+                        + pictureFromFb.toString() + "::" + getDeviceId()));
+
             } catch (NoSuchAlgorithmException | InvalidKeyException | NoSuchPaddingException
                     | IllegalBlockSizeException | InvalidParameterSpecException | BadPaddingException
                     | UnsupportedEncodingException | InvalidAlgorithmParameterException e) {
@@ -233,9 +249,11 @@ public class PeerConnection {
                                         String decrypted = SecurityHelper.decryptMsg(content);
                                         if (decrypted.contains("Valid")) {
 
-                                            String[] split = decrypted.split(":");
-                                            peerUniqueId = split[1];
-                                            saveUniqueIdInSharedPreferences(peerUniqueId);
+                                            String[] split = decrypted.split("::");
+                                            profileName = split[1];
+                                            profilePicture = split[2];
+                                            peerUniqueId = split[3];
+//                                            saveUniqueIdInSharedPreferences(peerUniqueId);
                                             authenticationCompleted = true;
                                             continue;
                                         }

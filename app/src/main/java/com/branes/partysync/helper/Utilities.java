@@ -2,6 +2,12 @@ package com.branes.partysync.helper;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.net.Uri;
+import android.widget.ImageView;
+
+import com.makeramen.roundedimageview.RoundedTransformationBuilder;
+import com.squareup.picasso.Picasso;
+import com.squareup.picasso.Transformation;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -82,6 +88,19 @@ public class Utilities {
         SharedPreferences.Editor editor = prefs.edit();
         editor.putStringSet("peerUniqueIds", uniqueIds);
         editor.apply();
+    }
+
+    public static void loadRoundedImage(Context context, Uri pictureUri, ImageView imageView) {
+        Transformation transformation = new RoundedTransformationBuilder()
+                .cornerRadiusDp(40)
+                .oval(false)
+                .build();
+
+        Picasso.with(context)
+                .load(pictureUri)
+                .fit()
+                .transform(transformation)
+                .into(imageView);
     }
 
     private static void sendBytes(byte[] myByteArray, int start, int len, OutputStream outputStream) throws IOException {

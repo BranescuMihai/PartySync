@@ -90,10 +90,9 @@ public class NetworkServiceManager implements AuthenticationFailureActions,
         String host = retrieveHost(serviceInfo);
 
         int port = serviceInfo.getPort();
-        String username = serviceInfo.getServiceName().split("-")[2];
 
         if (getChatClientIfExists(host) == null) {
-            final PeerConnection peerConnection = new PeerConnection(this, host, port, username);
+            final PeerConnection peerConnection = new PeerConnection(this, host, port);
             Handler hand = new Handler();
             hand.postDelayed(new Runnable() {
                 @Override

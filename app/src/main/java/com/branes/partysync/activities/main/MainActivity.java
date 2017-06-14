@@ -31,11 +31,9 @@ import com.branes.partysync.activities.peers.PeerActivity;
 import com.branes.partysync.custom_ui_elements.CircularTextView;
 import com.branes.partysync.helper.Constants;
 import com.branes.partysync.helper.SecurityHelper;
+import com.branes.partysync.helper.Utilities;
 import com.branes.partysync.network_communication.WifiStateChangedBroadcastReceiver;
 import com.facebook.Profile;
-import com.makeramen.roundedimageview.RoundedTransformationBuilder;
-import com.squareup.picasso.Picasso;
-import com.squareup.picasso.Transformation;
 
 import java.util.ArrayList;
 
@@ -229,25 +227,18 @@ public class MainActivity extends AppCompatActivity
         ImageView navHeaderPicture = (ImageView) navHeader.findViewById(R.id.nav_header_picture);
 
         Profile profile = Profile.getCurrentProfile();
+        Uri pictureFromFb = null;
 
-        Uri pictureFromFb = profile.getProfilePictureUri(160, 160);
-        if (pictureFromFb != null) {
-            Transformation transformation = new RoundedTransformationBuilder()
-                    .cornerRadiusDp(40)
-                    .oval(false)
-                    .build();
-
-            Picasso.with(this)
-                    .load(pictureFromFb)
-                    .fit()
-                    .transform(transformation)
-                    .into(navHeaderPicture);
-        } else {
-            navHeaderPicture.setImageDrawable(ContextCompat.getDrawable(this, R.mipmap.group_photo_backup));
-        }
-
-        if (profile.getName() != null) {
-            navHeaderTitle.setText(profile.getName());
+        if(profile != null) {
+            pictureFromFb = profile.getProfilePictureUri(160, 160);
+            if (pictureFromFb != null) {
+                Utilities.loadRoundedImage(this, pictureFromFb, navHeaderPicture);
+            } else {
+                navHeaderPicture.setImageDrawable(ContextCompat.getDrawable(this, R.mipmap.group_photo_backup));
+            }
+            if (profile.getName() != null) {
+                navHeaderTitle.setText(profile.getName());
+            }
         }
 
         changeSyncStateButton = (TextView) findViewById(R.id.change_sync_state_button);
