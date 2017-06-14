@@ -12,4 +12,13 @@
     <string name="no_permissions_granted">You must grant the required permissions</string>
 
     <string name="peer_activity_title">Friends connected</string>
+
+    <string name="facebook_app_id">1913135798964135</string>
+    <string name="fb_login_protocol_scheme">fb1913135798964135</string>
+    <string name="title_activity_main2">Main2Activity</string>
+
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+
+    <string name="action_settings">Settings</string>
 </resources>

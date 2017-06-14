@@ -6,7 +6,7 @@ import android.os.Bundle;
 import android.os.Handler;
 
 import com.branes.partysync.R;
-import com.branes.partysync.activities.main.MainActivity;
+import com.branes.partysync.activities.login.LoginActivity;
 
 /**
  * Copyright (c) 2017 Mihai Branescu
@@ -23,7 +23,7 @@ public class SplashActivity extends Activity {
         new Handler().postDelayed(new Runnable() {
             @Override
             public void run() {
-                Intent mainIntent = new Intent(SplashActivity.this, MainActivity.class);
+                Intent mainIntent = new Intent(SplashActivity.this, LoginActivity.class);
                 SplashActivity.this.startActivity(mainIntent);
                 SplashActivity.this.finish();
             }
