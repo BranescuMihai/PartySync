@@ -17,11 +17,14 @@ class NsdServiceDiscoveryListener implements NsdManager.DiscoveryListener {
     private String serviceName;
     private ServiceDiscoveredActions serviceDiscoveredActions;
     private NsdManager nsdManager;
+    private String groupName;
 
-    NsdServiceDiscoveryListener(NsdManager nsdManager, String serviceName, ServiceDiscoveredActions serviceDiscoveredActions) {
+    NsdServiceDiscoveryListener(NsdManager nsdManager, String serviceName, String groupName,
+                                ServiceDiscoveredActions serviceDiscoveredActions) {
         this.nsdManager = nsdManager;
         this.serviceName = serviceName;
         this.serviceDiscoveredActions = serviceDiscoveredActions;
+        this.groupName = groupName;
     }
 
     @Override
@@ -36,6 +39,8 @@ class NsdServiceDiscoveryListener implements NsdManager.DiscoveryListener {
             Log.i(TAG, "Unknown Service Type: " + nsdServiceInfo.getServiceType());
         } else if (nsdServiceInfo.getServiceName().equals(serviceName)) {
             Log.i(TAG, "The service running on the same machine has been discovered: " + serviceName);
+        } else if (!nsdServiceInfo.getServiceName().contains(groupName)) {
+            Log.i(TAG, "Unknown Service Name: " + nsdServiceInfo.getServiceName());
         } else if (nsdServiceInfo.getServiceName().contains(Constants.SERVICE_NAME)) {
             serviceDiscoveredActions.onServiceFound(nsdServiceInfo);
         }
@@ -48,6 +53,8 @@ class NsdServiceDiscoveryListener implements NsdManager.DiscoveryListener {
             Log.i(TAG, "Unknown Service Type: " + nsdServiceInfo.getServiceType());
         } else if (nsdServiceInfo.getServiceName().equals(serviceName)) {
             Log.i(TAG, "The service running on the same machine has been discovered: " + serviceName);
+        } else if (!nsdServiceInfo.getServiceName().contains(groupName)) {
+            Log.i(TAG, "Unknown Service Name: " + nsdServiceInfo.getServiceName());
         } else {
             serviceDiscoveredActions.onServiceLost(nsdServiceInfo);
         }

@@ -35,7 +35,7 @@ public class MainActivity extends AppCompatActivity implements MainContract.View
 
     private TextView changeSyncStateButton;
     private EditText insertPassword;
-    private EditText insertUsername;
+    private EditText insertGroupName;
     private CircularTextView numberOfPeers;
     private WifiStateChangedBroadcastReceiver wifiStateChangedBroadcastReceiver;
 
@@ -90,8 +90,8 @@ public class MainActivity extends AppCompatActivity implements MainContract.View
     }
 
     @Override
-    public String getUsername() {
-        return insertUsername.getText().toString();
+    public String getGroupName() {
+        return insertGroupName.getText().toString();
     }
 
     public void syncButtonClicked(View view) throws Exception {
@@ -102,8 +102,8 @@ public class MainActivity extends AppCompatActivity implements MainContract.View
             if (password.length() < 5) {
                 Toast.makeText(MainActivity.this, getString(R.string.password_error), Toast.LENGTH_SHORT).show();
             } else {
-                if (insertUsername.getText().length() < 4) {
-                    Toast.makeText(MainActivity.this, getString(R.string.username_error), Toast.LENGTH_SHORT).show();
+                if (insertGroupName.getText().length() < 4) {
+                    Toast.makeText(MainActivity.this, getString(R.string.group_name_error), Toast.LENGTH_SHORT).show();
                 } else {
                     SecurityHelper.initialize(password);
                     disableFields();
@@ -119,13 +119,13 @@ public class MainActivity extends AppCompatActivity implements MainContract.View
     private void enableFields() {
         insertPassword.setText("");
         insertPassword.setEnabled(true);
-        insertUsername.setText("");
-        insertUsername.setEnabled(true);
+        insertGroupName.setText("");
+        insertGroupName.setEnabled(true);
     }
 
     private void disableFields() {
         insertPassword.setEnabled(false);
-        insertUsername.setEnabled(false);
+        insertGroupName.setEnabled(false);
     }
 
     public void galleryButtonClicked(View view) {
@@ -176,7 +176,7 @@ public class MainActivity extends AppCompatActivity implements MainContract.View
     private void initViews() {
         changeSyncStateButton = (TextView) findViewById(R.id.change_sync_state_button);
         insertPassword = (EditText) findViewById(R.id.insert_password);
-        insertUsername = (EditText) findViewById(R.id.insert_username);
+        insertGroupName = (EditText) findViewById(R.id.insert_group_name);
         numberOfPeers = (CircularTextView) findViewById(R.id.number_of_peers);
         numberOfPeers.setText("0");
         numberOfPeers.setStrokeWidth(1);

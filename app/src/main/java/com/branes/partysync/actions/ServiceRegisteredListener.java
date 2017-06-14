@@ -11,4 +11,9 @@ public interface ServiceRegisteredListener {
      * Set the name of the service when a new service was registered
      */
     void onServiceRegistered(NsdServiceInfo nsdServiceInfo);
+
+    /**
+     * Stop the network service discovery
+     */
+    void onServiceUnregistered();
 }

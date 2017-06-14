@@ -31,14 +31,12 @@ public class WifiStateChangedBroadcastReceiver extends BroadcastReceiver {
         if (intent.getAction().equals("android.net.wifi.STATE_CHANGE")) {
             if (ni.getState().toString().equals("CONNECTED")) {
                 try {
-                    networkServiceManager.registerNetworkService(networkServiceManager.personalUsername);
-                    networkServiceManager.startNetworkServiceDiscovery();
+                    networkServiceManager.registerNetworkService(networkServiceManager.groupName);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
             } else {
                 networkServiceManager.unregisterNetworkService();
-                networkServiceManager.stopNetworkServiceDiscovery();
             }
         }
     }

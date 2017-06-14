@@ -28,7 +28,7 @@ public class NetworkServiceManager implements AuthenticationFailureActions,
 
     private static final String TAG = NetworkServiceManager.class.getName();
 
-    public String personalUsername;
+    String groupName;
 
     private String serviceName;
     private PeerConnectionIncoming peerConnectionIncoming;
@@ -60,6 +60,12 @@ public class NetworkServiceManager implements AuthenticationFailureActions,
     @Override
     public void onServiceRegistered(NsdServiceInfo nsdServiceInfo) {
         serviceName = nsdServiceInfo.getServiceName();
+        startNetworkServiceDiscovery();
+    }
+
+    @Override
+    public void onServiceUnregistered() {
+        stopNetworkServiceDiscovery();
     }
 
     @Override
@@ -141,13 +147,13 @@ public class NetworkServiceManager implements AuthenticationFailureActions,
         }
     }
 
-    public void registerNetworkService(String name) throws Exception {
+    public void registerNetworkService(String groupName) throws Exception {
 
         if (peerConnectionIncoming != null && peerConnectionIncoming.isAlive()) {
             return;
         }
 
-        personalUsername = name;
+        this.groupName = groupName;
 
         peerConnectionIncoming = new PeerConnectionIncoming(this);
         ServerSocket serverSocket = peerConnectionIncoming.getServerSocket();
@@ -161,7 +167,7 @@ public class NetworkServiceManager implements AuthenticationFailureActions,
         NsdServiceInfo nsdServiceInfo = new NsdServiceInfo();
 
         nsdServiceInfo.setServiceName(Constants.SERVICE_NAME + Utilities.generateIdentifier(Constants.IDENTIFIER_LENGTH) +
-                name);
+                groupName);
         nsdServiceInfo.setServiceType(Constants.SERVICE_TYPE);
         nsdServiceInfo.setHost(serverSocket.getInetAddress());
         nsdServiceInfo.setPort(serverSocket.getLocalPort());
@@ -184,7 +190,7 @@ public class NetworkServiceManager implements AuthenticationFailureActions,
 
     public void startNetworkServiceDiscovery() {
         Log.v(TAG, "Start Network Service Discovery");
-        discoveryListener = new NsdServiceDiscoveryListener(nsdManager, serviceName, this);
+        discoveryListener = new NsdServiceDiscoveryListener(nsdManager, serviceName, groupName, this);
         nsdManager.discoverServices(Constants.SERVICE_TYPE, NsdManager.PROTOCOL_DNS_SD, discoveryListener);
     }
 

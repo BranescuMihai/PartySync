@@ -31,6 +31,7 @@ class NsdServiceRegisteredListener implements NsdManager.RegistrationListener {
 
     @Override
     public void onServiceUnregistered(NsdServiceInfo nsdServiceInfo) {
+        serviceRegisteredListener.onServiceUnregistered();
     }
 
     @Override

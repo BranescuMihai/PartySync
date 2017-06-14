@@ -90,11 +90,10 @@ public class MainPresenter implements MainContract.Presenter, Observer, PeerList
     public void startServices() {
         startJobScheduler();
         try {
-            networkServiceManager.registerNetworkService(view.getUsername());
+            networkServiceManager.registerNetworkService(view.getGroupName());
         } catch (Exception e) {
             e.printStackTrace();
         }
-        networkServiceManager.startNetworkServiceDiscovery();
     }
 
     @Override
@@ -103,7 +102,6 @@ public class MainPresenter implements MainContract.Presenter, Observer, PeerList
             stopScheduledJobs(view.getContext());
         }
         networkServiceManager.unregisterNetworkService();
-        networkServiceManager.stopNetworkServiceDiscovery();
     }
 
     @Override

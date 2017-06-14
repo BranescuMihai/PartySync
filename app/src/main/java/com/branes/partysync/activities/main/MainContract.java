@@ -20,9 +20,9 @@ interface MainContract {
         void setNumberOfPeers(String numberOfPeers);
 
         /**
-         * @return the string from the username Edittext
+         * @return the string from the group Edittext
          */
-        String getUsername();
+        String getGroupName();
     }
 
     interface Presenter {

@@ -4,9 +4,9 @@
     <string name="stop_sync">STOP</string>
     <string name="gallery_viewer">View gallery</string>
     <string name="password_hint">Password</string>
-    <string name="username_hint">Username</string>
+    <string name="group_name_hint">Group Name</string>
 
-    <string name="username_error">Username must be at least 4 characters long</string>
+    <string name="group_name_error">Group name must be at least 4 characters long</string>
     <string name="password_error">Password must be at least 6 characters long</string>
     <string name="no_peers_connected">No peers are connected</string>
     <string name="no_permissions_granted">You must grant the required permissions</string>
