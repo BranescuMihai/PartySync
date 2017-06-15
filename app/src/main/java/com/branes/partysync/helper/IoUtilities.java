@@ -3,10 +3,12 @@ package com.branes.partysync.helper;
 import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
+import android.os.Environment;
 import android.provider.MediaStore;
 import android.util.Log;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
@@ -58,6 +60,28 @@ public class IoUtilities {
         } finally {
             if (cursor != null) {
                 cursor.close();
+            }
+        }
+    }
+
+    /**
+     * Stores the image file in the partySync folder
+     *
+     * @param name    is retrieved for Facebook, it belongs to the source of the pic
+     * @param time    the current time in millis as a String
+     * @param content the actual image as a byte array
+     * @throws IOException
+     */
+    public static void createFileFromImage(String name, String time, byte[] content) throws IOException {
+        File photosDirectory = new File(Environment.getExternalStorageDirectory().getPath() + "/Pictures/partySync");
+        if (photosDirectory.exists() || photosDirectory.mkdirs()) {
+
+            File pictureFile = new File(photosDirectory, name + time + ".jpg");
+
+            if (pictureFile.exists() || pictureFile.createNewFile()) {
+                FileOutputStream fos = new FileOutputStream(pictureFile);
+                fos.write(content);
+                fos.close();
             }
         }
     }

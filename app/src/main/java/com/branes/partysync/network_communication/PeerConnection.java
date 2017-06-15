@@ -4,7 +4,6 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.net.Uri;
-import android.os.Environment;
 import android.os.Handler;
 import android.provider.Settings;
 import android.telephony.TelephonyManager;
@@ -13,11 +12,11 @@ import android.util.Log;
 import com.branes.partysync.PartySyncApplication;
 import com.branes.partysync.actions.AuthenticationFailureActions;
 import com.branes.partysync.helper.Constants;
+import com.branes.partysync.helper.IoUtilities;
 import com.branes.partysync.helper.SecurityHelper;
-import com.facebook.Profile;
+import com.branes.partysync.helper.Utilities;
+import com.google.common.primitives.Longs;
 
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -27,6 +26,7 @@ import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidParameterSpecException;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -60,16 +60,16 @@ public class PeerConnection {
     private String peerUniqueId;
     private String profileName;
     private String profilePicture;
-    private String host;
+    private String serviceName;
 
     private AuthenticationFailureActions authenticationFailureActions;
 
     private BlockingQueue<byte[]> messageQueue = new ArrayBlockingQueue<>(Constants.MESSAGE_QUEUE_CAPACITY);
 
-    PeerConnection(AuthenticationFailureActions authenticationFailureActions, final String host, final int port) {
+    PeerConnection(AuthenticationFailureActions authenticationFailureActions, final String host, final int port, final String serviceName) {
 
         this.authenticationFailureActions = authenticationFailureActions;
-        this.host = host;
+        this.serviceName = serviceName;
 
         connectionDeactivated = false;
 
@@ -118,12 +118,12 @@ public class PeerConnection {
         return Uri.parse(profilePicture);
     }
 
-    String getHost() {
-        return host;
-    }
-
     Socket getSocket() {
         return socket;
+    }
+
+    String getServiceName() {
+        return serviceName;
     }
 
     public String getPeerUniqueId() {
@@ -175,16 +175,8 @@ public class PeerConnection {
             }
 
             try {
-                Profile profile = Profile.getCurrentProfile();
-                String fbName = "unknown";
-                Uri pictureFromFb = new Uri.Builder().build();
-                if (profile.getName() != null) {
-                    fbName = profile.getName();
-                    pictureFromFb = profile.getProfilePictureUri(160, 160);
-                }
-
-                sendInformation(SecurityHelper.encryptMsg("Valid::" + fbName + "::"
-                        + pictureFromFb.toString() + "::" + getDeviceId()));
+                sendInformation(SecurityHelper.encryptMsg("Valid::" + Utilities.getProfileName() + "::"
+                        + Utilities.getProfilePicture(120, 120).toString() + "::" + getDeviceId()));
 
             } catch (NoSuchAlgorithmException | InvalidKeyException | NoSuchPaddingException
                     | IllegalBlockSizeException | InvalidParameterSpecException | BadPaddingException
@@ -240,7 +232,7 @@ public class PeerConnection {
                 try {
                     Log.d(TAG, "Reading messages from " + socket.getInetAddress() + ":" + socket.getLocalPort());
                     while (!Thread.currentThread().isInterrupted()) {
-                        if (!isConnectionDeactivated()) {
+                        if (!isConnectionDeactivated() && !socket.isClosed()) {
                             byte[] content = readBytes(inputStream);
                             if (content != null) {
 
@@ -253,7 +245,7 @@ public class PeerConnection {
                                             profileName = split[1];
                                             profilePicture = split[2];
                                             peerUniqueId = split[3];
-//                                            saveUniqueIdInSharedPreferences(peerUniqueId);
+
                                             authenticationCompleted = true;
                                             continue;
                                         }
@@ -267,20 +259,11 @@ public class PeerConnection {
                                     }
                                 }
 
-                                File photosDirectory = new File(Environment.getExternalStorageDirectory().getPath() + "/Pictures/partySync");
+                                String timeString = String.valueOf(Longs.fromByteArray(content));
 
-                                if (photosDirectory.exists() || photosDirectory.mkdirs()) {
-                                    Long tsLong = System.currentTimeMillis() / 1000;
-                                    String ts = tsLong.toString();
+                                byte[] contentWithoutTime = Arrays.copyOfRange(content, 8, content.length);
 
-                                    File pictureFile = new File(photosDirectory, "image" + ts + ".jpg");
-
-                                    if (pictureFile.exists() || pictureFile.createNewFile()) {
-                                        FileOutputStream fos = new FileOutputStream(pictureFile);
-                                        fos.write(content);
-                                        fos.close();
-                                    }
-                                }
+                                IoUtilities.createFileFromImage(profileName.replaceAll("\\s+", ""), timeString, contentWithoutTime);
                             }
                         }
                     }

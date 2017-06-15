@@ -13,9 +13,14 @@ import com.branes.partysync.actions.PeerListChangeActions;
 import com.branes.partysync.camera.GalleryJobScheduler;
 import com.branes.partysync.camera.ObjectObserver;
 import com.branes.partysync.dependency_injection.DependencyInjection;
+import com.branes.partysync.helper.IoUtilities;
+import com.branes.partysync.helper.Utilities;
 import com.branes.partysync.network_communication.NetworkServiceManager;
 import com.branes.partysync.network_communication.PeerConnection;
+import com.google.common.primitives.Bytes;
+import com.google.common.primitives.Longs;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Observable;
 import java.util.Observer;
@@ -79,9 +84,21 @@ public class MainPresenter implements MainContract.Presenter, Observer, PeerList
 
         List<PeerConnection> peers = networkServiceManager.getCommunicationToPeers();
 
+        //concatenate the time of creation to the byte array
+        long timeOfCreation = System.currentTimeMillis() / 1000;
+        try {
+            IoUtilities.createFileFromImage(Utilities.getProfileName().replaceAll("\\s+", ""),
+                    String.valueOf(timeOfCreation), (byte[]) o);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        byte[] timeInBytes = Longs.toByteArray(timeOfCreation);
+        byte[] finalBytes = Bytes.concat(timeInBytes, (byte[]) o);
+
         for (PeerConnection peerConnection : peers) {
             if (!peerConnection.isConnectionDeactivated()) {
-                peerConnection.sendInformation((byte[]) o);
+                peerConnection.sendInformation(finalBytes);
             }
         }
     }

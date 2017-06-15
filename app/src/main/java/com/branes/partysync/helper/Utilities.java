@@ -5,6 +5,7 @@ import android.content.SharedPreferences;
 import android.net.Uri;
 import android.widget.ImageView;
 
+import com.facebook.Profile;
 import com.makeramen.roundedimageview.RoundedTransformationBuilder;
 import com.squareup.picasso.Picasso;
 import com.squareup.picasso.Transformation;
@@ -90,6 +91,13 @@ public class Utilities {
         editor.apply();
     }
 
+    /**
+     * Loads a downloaded image from an Uri into an ImageView
+     *
+     * @param context    used for Picasso
+     * @param pictureUri from which we should start downloading
+     * @param imageView  where we put the downloaded picture
+     */
     public static void loadRoundedImage(Context context, Uri pictureUri, ImageView imageView) {
         Transformation transformation = new RoundedTransformationBuilder()
                 .cornerRadiusDp(40)
@@ -101,6 +109,32 @@ public class Utilities {
                 .fit()
                 .transform(transformation)
                 .into(imageView);
+    }
+
+    /**
+     * @return the public Facebook name of the user
+     */
+    public static String getProfileName() {
+        Profile profile = Profile.getCurrentProfile();
+        String fbName = "Friend";
+        if (profile.getName() != null) {
+            fbName = profile.getName();
+        }
+        return fbName;
+    }
+
+    /**
+     * @param width  of the image thumbnail
+     * @param height of the image thumbnail
+     * @return the public Facebook profile picture of the user
+     */
+    public static Uri getProfilePicture(int width, int height) {
+        Profile profile = Profile.getCurrentProfile();
+        Uri pictureFromFb = new Uri.Builder().build();
+        if (profile.getProfilePictureUri(width, height) != null) {
+            pictureFromFb = profile.getProfilePictureUri(width, height);
+        }
+        return pictureFromFb;
     }
 
     private static void sendBytes(byte[] myByteArray, int start, int len, OutputStream outputStream) throws IOException {

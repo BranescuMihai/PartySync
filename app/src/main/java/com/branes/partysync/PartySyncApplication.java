@@ -1,8 +1,8 @@
 package com.branes.partysync;
 
 import android.annotation.SuppressLint;
-import android.app.Application;
 import android.content.Context;
+import android.support.multidex.MultiDexApplication;
 
 import com.branes.partysync.dependency_injection.AppComponent;
 import com.branes.partysync.dependency_injection.AppComponentProvider;
@@ -12,7 +12,7 @@ import com.branes.partysync.dependency_injection.DaggerAppComponent;
 /**
  * Copyright (c) 2017 Mihai Branescu
  */
-public class PartySyncApplication extends Application implements AppComponentProvider {
+public class PartySyncApplication extends MultiDexApplication implements AppComponentProvider {
 
     @SuppressLint("StaticFieldLeak")
     private static Context mContext;
