@@ -35,7 +35,7 @@ public class PeerActivity extends AppCompatActivity implements PeerElementAction
 
         ListView peerList = (ListView) findViewById(R.id.peer_list);
 
-        peerConnections = networkServiceManager.getCommunicationToPeers();
+        peerConnections = networkServiceManager.getConnections().getPeerConnections();
 
         PeerAdapter peerAdapter = new PeerAdapter(this, peerConnections, Utilities.getUniqueIdFromSharedPreferences(this));
         peerList.setAdapter(peerAdapter);

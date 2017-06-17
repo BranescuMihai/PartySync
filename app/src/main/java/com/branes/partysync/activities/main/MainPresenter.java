@@ -70,7 +70,7 @@ public class MainPresenter implements MainContract.Presenter, Observer, PeerList
 
     @Override
     public void onPeerListChanged() {
-        String displayNumberOfPeers = networkServiceManager.getCommunicationToPeers().size() + "";
+        String displayNumberOfPeers = networkServiceManager.getConnections().getSize() + "";
         view.setNumberOfPeers(displayNumberOfPeers);
     }
 
@@ -82,7 +82,7 @@ public class MainPresenter implements MainContract.Presenter, Observer, PeerList
             startJobScheduler();
         }
 
-        List<PeerConnection> peers = networkServiceManager.getCommunicationToPeers();
+        List<PeerConnection> peers = networkServiceManager.getConnections().getPeerConnections();
 
         //concatenate the time of creation to the byte array
         long timeOfCreation = System.currentTimeMillis() / 1000;
@@ -98,7 +98,7 @@ public class MainPresenter implements MainContract.Presenter, Observer, PeerList
 
         for (PeerConnection peerConnection : peers) {
             if (!peerConnection.isConnectionDeactivated()) {
-                peerConnection.sendInformation(finalBytes);
+                Utilities.sendInformation(finalBytes, peerConnection.getMessageQueue());
             }
         }
     }
@@ -123,7 +123,7 @@ public class MainPresenter implements MainContract.Presenter, Observer, PeerList
 
     @Override
     public boolean arePeersConnected() {
-        return !networkServiceManager.getCommunicationToPeers().isEmpty();
+        return !networkServiceManager.getConnections().getPeerConnections().isEmpty();
     }
 
     private void startJobScheduler() {

@@ -1,8 +1,12 @@
 package com.branes.partysync.helper;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.net.Uri;
+import android.os.Environment;
+import android.provider.Settings;
+import android.telephony.TelephonyManager;
 import android.widget.ImageView;
 
 import com.facebook.Profile;
@@ -10,21 +14,33 @@ import com.makeramen.roundedimageview.RoundedTransformationBuilder;
 import com.squareup.picasso.Picasso;
 import com.squareup.picasso.Transformation;
 
+import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.net.Socket;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.BlockingQueue;
 
 import static android.content.Context.MODE_PRIVATE;
+import static com.branes.partysync.PartySyncApplication.getContext;
 
 /**
  * Copyright (c) 2017 Mihai Branescu
  */
 public class Utilities {
+
+    private static String serviceName = "";
 
     public static String generateIdentifier(int length) {
         StringBuilder result = new StringBuilder("-");
@@ -135,6 +151,115 @@ public class Utilities {
             pictureFromFb = profile.getProfilePictureUri(width, height);
         }
         return pictureFromFb;
+    }
+
+    @SuppressLint("HardwareIds")
+    public static String getDeviceId() {
+        String deviceId;
+        TelephonyManager mTelephony = (TelephonyManager) getContext().getSystemService(Context.TELEPHONY_SERVICE);
+
+        if (mTelephony.getDeviceId() != null) {
+            deviceId = mTelephony.getDeviceId();
+        } else {
+            deviceId = Settings.Secure.getString(getContext().getContentResolver(), Settings.Secure.ANDROID_ID);
+        }
+        return deviceId;
+    }
+
+    public static BufferedReader getReader(Socket socket) {
+        try {
+            return new BufferedReader(new InputStreamReader(socket.getInputStream()));
+        } catch (IOException ioException) {
+            if (Constants.DEBUG) {
+                ioException.printStackTrace();
+            }
+        }
+        return null;
+    }
+
+    public static PrintWriter getWriter(Socket socket) {
+        try {
+            return new PrintWriter(new BufferedOutputStream(socket.getOutputStream()));
+        } catch (IOException ioException) {
+            if (Constants.DEBUG) {
+                ioException.getMessage();
+            }
+        }
+        return null;
+    }
+
+    public static void sendInformation(byte[] image, BlockingQueue<byte[]> messageQueue) {
+        try {
+            messageQueue.put(image);
+        } catch (InterruptedException interruptedException) {
+            if (Constants.DEBUG) {
+                interruptedException.printStackTrace();
+            }
+        }
+    }
+
+    public static ArrayList<String> getAllImageNames() {
+        File folder = new File(Environment.getExternalStorageDirectory().getPath() + "/Pictures/partySync");
+        if (folder.exists()) {
+            File[] listOfFiles = folder.listFiles();
+            ArrayList<String> imageNames = new ArrayList<>();
+            for (File file : listOfFiles) {
+                if (file.isFile()) {
+                    imageNames.add(file.getName());
+                }
+            }
+            return imageNames;
+        }
+        return new ArrayList<>();
+    }
+
+    public static ArrayList<File> getAllDifferentImages(List<String> receivedFileNames) {
+        File folder = new File(Environment.getExternalStorageDirectory().getPath() + "/Pictures/partySync");
+        if (folder.exists()) {
+            File[] listOfFiles = folder.listFiles();
+
+            //get my own file names and remove the ones received
+            ArrayList<String> imageNames = new ArrayList<>();
+            for (File file : listOfFiles) {
+                if (file.isFile()) {
+                    imageNames.add(file.getName());
+                }
+            }
+            imageNames.removeAll(receivedFileNames);
+
+            //get the files that correspond to the different image names
+            ArrayList<File> differentFiles = new ArrayList<>();
+            for (File file : listOfFiles) {
+                if (file.isFile() && imageNames.contains(file.getName())) {
+                    differentFiles.add(file);
+                }
+            }
+
+            return differentFiles;
+        }
+        return new ArrayList<>();
+    }
+
+    public static void setOwnServiceName(String serviceName) {
+        Utilities.serviceName = serviceName;
+    }
+
+    public static String getOwnServiceName() {
+        return serviceName;
+    }
+
+    /**
+     * Check if app name and group name are identical
+     *
+     * @param foreignServiceName used to obtain the two required checks
+     * @return true if the service name belongs to the same group, false otherwise
+     */
+    public static boolean checkIfSameGroup(String foreignServiceName) {
+        String[] splitOwn = serviceName.split("-");
+        String[] splitForeign = foreignServiceName.split("-");
+
+        return splitOwn[0].equals(splitForeign[0]) &&
+                splitOwn[2].equals(splitForeign[2]);
     }
 
     private static void sendBytes(byte[] myByteArray, int start, int len, OutputStream outputStream) throws IOException {

@@ -1,4 +1,4 @@
-package com.branes.partysync.network_communication;
+package com.branes.partysync.network_communication.nsd_listeners;
 
 import android.net.nsd.NsdManager;
 import android.net.nsd.NsdServiceInfo;
@@ -9,13 +9,13 @@ import com.branes.partysync.actions.ServiceRegisteredListener;
 /**
  * Copyright (c) 2017 Mihai Branescu
  */
-class NsdServiceRegisteredListener implements NsdManager.RegistrationListener {
+public class NsdServiceRegisteredListener implements NsdManager.RegistrationListener {
 
-    private static final String TAG = NsdServiceResolvedListener.class.getName();
+    private static final String TAG = NsdServiceRegisteredListener.class.getName();
 
     private ServiceRegisteredListener serviceRegisteredListener;
 
-    NsdServiceRegisteredListener(ServiceRegisteredListener serviceRegisteredListener) {
+    public NsdServiceRegisteredListener(ServiceRegisteredListener serviceRegisteredListener) {
         this.serviceRegisteredListener = serviceRegisteredListener;
     }
 

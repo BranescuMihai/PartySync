@@ -13,13 +13,15 @@ import com.branes.partysync.actions.ServiceRegisteredListener;
 import com.branes.partysync.actions.ServiceResolvedActions;
 import com.branes.partysync.helper.Constants;
 import com.branes.partysync.helper.Utilities;
+import com.branes.partysync.model.Connections;
+import com.branes.partysync.network_communication.nsd_listeners.NsdServiceDiscoveryListener;
+import com.branes.partysync.network_communication.nsd_listeners.NsdServiceRegisteredListener;
+import com.branes.partysync.network_communication.nsd_listeners.NsdServiceResolvedListener;
 
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 
 /**
  * Copyright (c) 2017 Mihai Branescu
@@ -33,8 +35,8 @@ public class NetworkServiceManager implements AuthenticationFailureActions,
 
     private String serviceName;
     private PeerConnectionIncoming peerConnectionIncoming;
-    private List<PeerConnection> communicationToPeers;
-    private List<PeerConnection> communicationFromClients;
+
+    private Connections connections;
 
     private NsdManager nsdManager;
     private NsdManager.DiscoveryListener discoveryListener;
@@ -45,12 +47,8 @@ public class NetworkServiceManager implements AuthenticationFailureActions,
     private HashMap<String, Integer> failedToResolveServices;
 
     public NetworkServiceManager(Context context) {
-
-        this.communicationToPeers = new ArrayList<>();
-        this.communicationFromClients = new ArrayList<>();
-
+        connections = new Connections();
         nsdManager = (NsdManager) context.getSystemService(Context.NSD_SERVICE);
-
         failedToResolveServices = new HashMap<>();
     }
 
@@ -76,36 +74,20 @@ public class NetworkServiceManager implements AuthenticationFailureActions,
 
     @Override
     public void onServiceLost(NsdServiceInfo nsdServiceInfo) {
-        if (nsdServiceInfo.getServiceName() != null) {
-            PeerConnection client = getChatClientIfExists(nsdServiceInfo.getServiceName());
-
-            if (client != null) {
-                closeConnection(client);
-                communicationToPeers.remove(client);
-                peerListChangeActions.onPeerListChanged();
-            }
+        if (nsdServiceInfo.getServiceName() != null
+                && connections.removeConnection(nsdServiceInfo.getServiceName())) {
+            peerListChangeActions.onPeerListChanged();
         }
     }
 
     @Override
     public void onServiceResolved(NsdServiceInfo serviceInfo) {
         String host = retrieveHost(serviceInfo);
-
         int port = serviceInfo.getPort();
 
-        if (getChatClientIfExists(host) == null) {
-            final PeerConnection peerConnection = new PeerConnection(this, host, port, serviceInfo.getServiceName());
-            Handler hand = new Handler();
-            hand.postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    if (peerConnection.getSocket() != null) {
-                        communicationToPeers.add(peerConnection);
-                        peerListChangeActions.onPeerListChanged();
-                    }
-                }
-            }, 600);
+        if (connections.addConnection(this, host, port)) {
             Log.i(TAG, "A service has been discovered on " + host + ":" + port);
+            peerListChangeActions.onPeerListChanged();
         }
     }
 
@@ -131,6 +113,7 @@ public class NetworkServiceManager implements AuthenticationFailureActions,
             handler.postDelayed(new Runnable() {
                 @Override
                 public void run() {
+                    Log.e("Error", 5000 * failedToResolveServices.get(foreignServiceName) + " " + foreignServiceName);
                     nsdManager.resolveService(serviceInfo, new NsdServiceResolvedListener(serviceName, NetworkServiceManager.this));
                 }
             }, 5000 * failedToResolveServices.get(foreignServiceName));
@@ -139,13 +122,8 @@ public class NetworkServiceManager implements AuthenticationFailureActions,
 
     @Override
     public void onAuthenticationFailed(Socket socket) {
-        for (PeerConnection peerConnection : communicationToPeers) {
-            if (peerConnection.getSocket().equals(socket)) {
-                closeConnection(peerConnection);
-                communicationToPeers.remove(peerConnection);
-                peerListChangeActions.onPeerListChanged();
-                break;
-            }
+        if (connections.removeConnection(socket)) {
+            peerListChangeActions.onPeerListChanged();
         }
     }
 
@@ -157,7 +135,10 @@ public class NetworkServiceManager implements AuthenticationFailureActions,
 
         this.groupName = groupName;
 
-        peerConnectionIncoming = new PeerConnectionIncoming(this);
+        Utilities.setOwnServiceName(Constants.SERVICE_NAME + Utilities.generateIdentifier(Constants.IDENTIFIER_LENGTH) +
+                groupName);
+
+        peerConnectionIncoming = new PeerConnectionIncoming();
         ServerSocket serverSocket = peerConnectionIncoming.getServerSocket();
         if (serverSocket == null) {
             throw new Exception("Could not get server socket");
@@ -168,8 +149,7 @@ public class NetworkServiceManager implements AuthenticationFailureActions,
 
         NsdServiceInfo nsdServiceInfo = new NsdServiceInfo();
 
-        nsdServiceInfo.setServiceName(Constants.SERVICE_NAME + Utilities.generateIdentifier(Constants.IDENTIFIER_LENGTH) +
-                groupName);
+        nsdServiceInfo.setServiceName(Utilities.getOwnServiceName());
         nsdServiceInfo.setServiceType(Constants.SERVICE_TYPE);
         nsdServiceInfo.setHost(serverSocket.getInetAddress());
         nsdServiceInfo.setPort(serverSocket.getLocalPort());
@@ -182,10 +162,7 @@ public class NetworkServiceManager implements AuthenticationFailureActions,
         if (peerConnectionIncoming != null && peerConnectionIncoming.isAlive()) {
             Log.v(TAG, "Unregister Network Service");
             nsdManager.unregisterService(registrationListener);
-            for (PeerConnection communicationFromClient : communicationFromClients) {
-                closeConnection(communicationFromClient);
-            }
-            communicationFromClients.clear();
+
             try {
                 peerConnectionIncoming.getServerSocket().close();
             } catch (IOException e) {
@@ -195,16 +172,8 @@ public class NetworkServiceManager implements AuthenticationFailureActions,
         }
     }
 
-    public List<PeerConnection> getCommunicationToPeers() {
-        return communicationToPeers;
-    }
-
-    List<PeerConnection> getCommunicationFromClients() {
-        return communicationFromClients;
-    }
-
-    void setCommunicationFromClients(List<PeerConnection> communicationFromClients) {
-        this.communicationFromClients = communicationFromClients;
+    public Connections getConnections() {
+        return connections;
     }
 
     private void startNetworkServiceDiscovery() {
@@ -219,21 +188,9 @@ public class NetworkServiceManager implements AuthenticationFailureActions,
             nsdManager.stopServiceDiscovery(discoveryListener);
             discoveryListener = null;
 
-            for (PeerConnection peerConnection : communicationToPeers) {
-                closeConnection(peerConnection);
-            }
-            communicationToPeers.clear();
+            connections.clearConnections();
             peerListChangeActions.onPeerListChanged();
         }
-    }
-
-    private PeerConnection getChatClientIfExists(String serviceName) {
-        for (PeerConnection client : communicationToPeers) {
-            if (client.getServiceName().equals(serviceName)) {
-                return client;
-            }
-        }
-        return null;
     }
 
     private String retrieveHost(NsdServiceInfo serviceInfo) {
@@ -242,14 +199,5 @@ public class NetworkServiceManager implements AuthenticationFailureActions,
             return host.substring(1);
         }
         return host;
-    }
-
-    private void closeConnection(PeerConnection peerConnection) {
-        try {
-            peerConnection.getSocket().close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        peerConnection.stopThreads();
     }
 }

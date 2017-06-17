@@ -1,44 +1,27 @@
 package com.branes.partysync.network_communication;
 
-import android.annotation.SuppressLint;
-import android.content.Context;
-import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Handler;
-import android.provider.Settings;
-import android.telephony.TelephonyManager;
 import android.util.Log;
 
-import com.branes.partysync.PartySyncApplication;
 import com.branes.partysync.actions.AuthenticationFailureActions;
 import com.branes.partysync.helper.Constants;
-import com.branes.partysync.helper.IoUtilities;
-import com.branes.partysync.helper.SecurityHelper;
 import com.branes.partysync.helper.Utilities;
+import com.branes.partysync.network_communication.threads.ReceiveListThread;
+import com.branes.partysync.network_communication.threads.ReceiveThread;
+import com.branes.partysync.network_communication.threads.SendListThread;
+import com.branes.partysync.network_communication.threads.SendThread;
+import com.google.common.primitives.Bytes;
 import com.google.common.primitives.Longs;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.UnsupportedEncodingException;
 import java.net.Socket;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-import java.security.spec.InvalidParameterSpecException;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
-
-import javax.crypto.BadPaddingException;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
-
-import static android.content.Context.MODE_PRIVATE;
-import static com.branes.partysync.helper.Utilities.readBytes;
-import static com.branes.partysync.helper.Utilities.sendBytes;
 
 /**
  * Copyright (c) 2017 Mihai Branescu
@@ -52,24 +35,27 @@ public class PeerConnection {
     private SendThread sendThread;
     private ReceiveThread receiveThread;
 
-    private OutputStream outputStream;
-    private InputStream inputStream;
+    private boolean createdFromDiscovery;
 
     private boolean connectionDeactivated;
+    private boolean connectionReady;
 
     private String peerUniqueId;
     private String profileName;
     private String profilePicture;
-    private String serviceName;
+    private String foreignServiceName;
+    private String host;
 
     private AuthenticationFailureActions authenticationFailureActions;
 
     private BlockingQueue<byte[]> messageQueue = new ArrayBlockingQueue<>(Constants.MESSAGE_QUEUE_CAPACITY);
 
-    PeerConnection(AuthenticationFailureActions authenticationFailureActions, final String host, final int port, final String serviceName) {
+    public PeerConnection(AuthenticationFailureActions authenticationFailureActions, final String host, final int port) {
 
         this.authenticationFailureActions = authenticationFailureActions;
-        this.serviceName = serviceName;
+        this.host = host;
+
+        createdFromDiscovery = true;
 
         connectionDeactivated = false;
 
@@ -79,34 +65,29 @@ public class PeerConnection {
             public void run() {
                 try {
                     socket = new Socket(host, port);
-                    Log.d(TAG, "A socket has been created on " + socket.getInetAddress() + ":" + socket.getLocalPort());
+                    Log.d(TAG, "A socket has been created on " + socket.getInetAddress() + ":" + socket.getPort());
                 } catch (IOException ioException) {
                     Log.e(TAG, "An exception has occurred while creating the socket: " + ioException.getMessage());
                 }
                 if (socket != null) {
                     startThreads();
+                    startListThreads();
                 }
             }
         }, 500);
     }
 
-    PeerConnection(AuthenticationFailureActions authenticationFailureActions, Socket socket) {
+    public PeerConnection(AuthenticationFailureActions authenticationFailureActions, Socket socket) {
         this.authenticationFailureActions = authenticationFailureActions;
         this.socket = socket;
 
-        if (socket != null) {
-            startThreads();
-        }
-    }
+        createdFromDiscovery = false;
 
-    public void sendInformation(byte[] image) {
-        try {
-            messageQueue.put(image);
-        } catch (InterruptedException interruptedException) {
-            Log.e(TAG, "An exception has occurred: " + interruptedException.getMessage());
-            if (Constants.DEBUG) {
-                interruptedException.printStackTrace();
-            }
+        if (socket != null) {
+            this.host = socket.getInetAddress().getHostAddress();
+            Log.d(TAG, "A socket from server has been created on " + socket.getInetAddress() + ":" + socket.getPort());
+            startThreads();
+            startListThreads();
         }
     }
 
@@ -118,12 +99,24 @@ public class PeerConnection {
         return Uri.parse(profilePicture);
     }
 
-    Socket getSocket() {
+    public Socket getSocket() {
         return socket;
     }
 
-    String getServiceName() {
-        return serviceName;
+    public BlockingQueue<byte[]> getMessageQueue() {
+        return messageQueue;
+    }
+
+    public AuthenticationFailureActions getAuthenticationFailureActions() {
+        return authenticationFailureActions;
+    }
+
+    public boolean isConnectionReady() {
+        return connectionReady;
+    }
+
+    public void setConnectionReady(boolean connectionReady) {
+        this.connectionReady = connectionReady;
     }
 
     public String getPeerUniqueId() {
@@ -138,15 +131,35 @@ public class PeerConnection {
         this.connectionDeactivated = connectionDeactivated;
     }
 
+    public boolean isCreatedFromDiscovery() {
+        return createdFromDiscovery;
+    }
+
+    public String getForeignServiceName() {
+        return foreignServiceName;
+    }
+
+    public String getHost() {
+        return host;
+    }
+
     private void startThreads() {
-        sendThread = new SendThread();
+        sendThread = new SendThread(this);
         sendThread.start();
 
-        receiveThread = new ReceiveThread();
+        receiveThread = new ReceiveThread(this);
         receiveThread.start();
     }
 
-    void stopThreads() {
+    private void startListThreads() {
+        SendListThread sendListThread = new SendListThread(Utilities.getAllImageNames(), this);
+        sendListThread.start();
+
+        ReceiveListThread receiveListThread = new ReceiveListThread(this);
+        receiveListThread.start();
+    }
+
+    public void stopThreads() {
 
         sendThread.stopThread();
         receiveThread.stopThread();
@@ -163,156 +176,36 @@ public class PeerConnection {
         }
     }
 
-    private class SendThread extends Thread {
-
-        @Override
-        public void run() {
-
-            try {
-                outputStream = socket.getOutputStream();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-
-            try {
-                sendInformation(SecurityHelper.encryptMsg("Valid::" + Utilities.getProfileName() + "::"
-                        + Utilities.getProfilePicture(120, 120).toString() + "::" + getDeviceId()));
-
-            } catch (NoSuchAlgorithmException | InvalidKeyException | NoSuchPaddingException
-                    | IllegalBlockSizeException | InvalidParameterSpecException | BadPaddingException
-                    | UnsupportedEncodingException | InvalidAlgorithmParameterException e) {
-                e.printStackTrace();
-            }
-
-            if (outputStream != null) {
-                try {
-                    Log.d(TAG, "Sending messages to " + socket.getInetAddress() + ":" + socket.getLocalPort());
-                    while (!Thread.currentThread().isInterrupted()) {
-                        if (!isConnectionDeactivated()) {
-                            byte[] content = messageQueue.take();
-                            if (content != null) {
-                                try {
-                                    sendBytes(content, outputStream);
-                                } catch (IOException e) {
-                                    e.printStackTrace();
-                                }
-                            }
-                        }
-                    }
-                } catch (InterruptedException interruptedException) {
-                    Log.e(TAG, "An exception has occurred: " + interruptedException.getMessage());
-                    if (Constants.DEBUG) {
-                        interruptedException.printStackTrace();
-                    }
-                }
-            }
-
-            Log.i(TAG, "Send Thread ended");
-
-        }
-
-        void stopThread() {
-            interrupt();
-        }
-
-    }
-
-    private class ReceiveThread extends Thread {
-
-        @Override
-        public void run() {
-
-            boolean authenticationCompleted = false;
-            try {
-                inputStream = socket.getInputStream();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            if (inputStream != null) {
-                try {
-                    Log.d(TAG, "Reading messages from " + socket.getInetAddress() + ":" + socket.getLocalPort());
-                    while (!Thread.currentThread().isInterrupted()) {
-                        if (!isConnectionDeactivated() && !socket.isClosed()) {
-                            byte[] content = readBytes(inputStream);
-                            if (content != null) {
-
-                                if (!authenticationCompleted) {
-                                    try {
-                                        String decrypted = SecurityHelper.decryptMsg(content);
-                                        if (decrypted.contains("Valid")) {
-
-                                            String[] split = decrypted.split("::");
-                                            profileName = split[1];
-                                            profilePicture = split[2];
-                                            peerUniqueId = split[3];
-
-                                            authenticationCompleted = true;
-                                            continue;
-                                        }
-                                    } catch (NoSuchAlgorithmException | InvalidKeyException | NoSuchPaddingException
-                                            | IllegalBlockSizeException | InvalidParameterSpecException
-                                            | BadPaddingException | UnsupportedEncodingException
-                                            | InvalidAlgorithmParameterException e) {
-                                        authenticationFailureActions.onAuthenticationFailed(socket);
-                                        stopThreads();
-                                        continue;
-                                    }
-                                }
-
-                                String timeString = String.valueOf(Longs.fromByteArray(content));
-
-                                byte[] contentWithoutTime = Arrays.copyOfRange(content, 8, content.length);
-
-                                IoUtilities.createFileFromImage(profileName.replaceAll("\\s+", ""), timeString, contentWithoutTime);
-                            }
-                        }
-                    }
-                } catch (IOException ioException) {
-                    Log.e(TAG, "An exception has occurred: " + ioException.getMessage());
-                    if (Constants.DEBUG) {
-                        ioException.printStackTrace();
-                    }
-                }
-            }
-
-            Log.i(TAG, "Receive Thread ended");
-
-        }
-
-        void stopThread() {
-            interrupt();
-        }
-    }
-
-    @SuppressLint("HardwareIds")
-    private String getDeviceId() {
-        String deviceId;
-        TelephonyManager mTelephony = (TelephonyManager) getContext().getSystemService(Context.TELEPHONY_SERVICE);
-
-        if (mTelephony.getDeviceId() != null) {
-            deviceId = mTelephony.getDeviceId();
+    public void setConnectionDetails(String profileName, String profilePicture, String peerUniqueId, String foreignServiceName) {
+        Log.d(TAG, "Auth finished with " + socket.getInetAddress() + ":" + socket.getPort() + "--" + socket.getLocalPort());
+        if (Utilities.checkIfSameGroup(foreignServiceName)) {
+            this.profileName = profileName;
+            this.profilePicture = profilePicture;
+            this.peerUniqueId = peerUniqueId;
+            this.foreignServiceName = foreignServiceName;
+            ((NetworkServiceManager) authenticationFailureActions).getConnections()
+                    .checkForRedundantConnections(host, peerUniqueId);
         } else {
-            deviceId = Settings.Secure.getString(getContext().getContentResolver(), Settings.Secure.ANDROID_ID);
+            stopThreads();
         }
-        return deviceId;
     }
 
-    private Context getContext() {
-        return PartySyncApplication.getContext();
-    }
+    public void compareFiles(List<String> receivedFileNames) throws IOException {
 
-    private void saveUniqueIdInSharedPreferences(String peerUniqueId) {
-        SharedPreferences prefs = getContext().getSharedPreferences(Constants.SERVICE_NAME, MODE_PRIVATE);
+        ArrayList<File> differentImages = Utilities.getAllDifferentImages(receivedFileNames);
 
-        Set<String> uniqueIds = prefs.getStringSet("peerUniqueIds", null);
+        for (File file : differentImages) {
+            FileInputStream fileInputStream = new FileInputStream(file);
+            int length = (int) file.length();
+            byte[] fileContent = new byte[length];
+            fileInputStream.read(fileContent, 0, length);
 
-        if (uniqueIds == null) {
-            uniqueIds = new HashSet<>();
+            String[] split = file.getName().split("[_\\.]");
+            long timeLong = Long.valueOf(split[1]);
+            byte[] timeInBytes = Longs.toByteArray(timeLong);
+            byte[] finalBytes = Bytes.concat(timeInBytes, fileContent);
+
+            Utilities.sendInformation(finalBytes, messageQueue);
         }
-        uniqueIds.add(peerUniqueId);
-
-        SharedPreferences.Editor editor = prefs.edit();
-        editor.putStringSet("peerUniqueIds", uniqueIds);
-        editor.apply();
     }
 }

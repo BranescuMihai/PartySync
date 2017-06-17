@@ -2,26 +2,32 @@ package com.branes.partysync.network_communication;
 
 import android.util.Log;
 
+import com.branes.partysync.PartySyncApplication;
+import com.branes.partysync.dependency_injection.DependencyInjection;
 import com.branes.partysync.helper.Constants;
 
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.List;
+
+import javax.inject.Inject;
 
 /**
  * Copyright (c) 2017 Mihai Branescu
  */
-class PeerConnectionIncoming extends Thread {
+public class PeerConnectionIncoming extends Thread {
 
     private static final String TAG = PeerConnectionIncoming.class.getName();
 
-    private NetworkServiceManager networkServiceManager = null;
+    @Inject
+    NetworkServiceManager networkServiceManager;
 
     private ServerSocket serverSocket = null;
 
-    PeerConnectionIncoming(NetworkServiceManager networkServiceManager) {
-        this.networkServiceManager = networkServiceManager;
+    PeerConnectionIncoming() {
+
+        DependencyInjection.getAppComponent(PartySyncApplication.getContext()).inject(this);
+
         try {
             serverSocket = new ServerSocket(0);
         } catch (IOException ioException) {
@@ -37,10 +43,8 @@ class PeerConnectionIncoming extends Thread {
             while (!Thread.currentThread().isInterrupted()) {
                 Log.i(TAG, "Waiting for a connection...");
                 Socket socket = serverSocket.accept();
-                Log.i(TAG, "Received a connection request from: " + socket.getInetAddress() + ":" + socket.getLocalPort());
-                List<PeerConnection> communicationFromClients = networkServiceManager.getCommunicationFromClients();
-                communicationFromClients.add(new PeerConnection(networkServiceManager, socket));
-                networkServiceManager.setCommunicationFromClients(communicationFromClients);
+                Log.i(TAG, "Received a connection request from: " + socket.getInetAddress() + ":" + socket.getPort());
+                networkServiceManager.getConnections().addConnection(networkServiceManager, socket);
             }
         } catch (IOException ioException) {
             Log.e(TAG, "An error has occurred during server run: " + ioException.getMessage());

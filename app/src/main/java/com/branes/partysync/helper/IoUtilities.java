@@ -76,7 +76,7 @@ public class IoUtilities {
         File photosDirectory = new File(Environment.getExternalStorageDirectory().getPath() + "/Pictures/partySync");
         if (photosDirectory.exists() || photosDirectory.mkdirs()) {
 
-            File pictureFile = new File(photosDirectory, name + time + ".jpg");
+            File pictureFile = new File(photosDirectory, name + "_" + time + ".jpg");
 
             if (pictureFile.exists() || pictureFile.createNewFile()) {
                 FileOutputStream fos = new FileOutputStream(pictureFile);
