@@ -41,6 +41,7 @@ import static com.branes.partysync.PartySyncApplication.getContext;
 public class Utilities {
 
     private static String serviceName = "";
+    private static String groupName = "";
 
     public static String generateIdentifier(int length) {
         StringBuilder result = new StringBuilder("-");
@@ -199,7 +200,7 @@ public class Utilities {
     }
 
     public static ArrayList<String> getAllImageNames() {
-        File folder = new File(Environment.getExternalStorageDirectory().getPath() + "/Pictures/partySync");
+        File folder = new File(Environment.getExternalStorageDirectory().getPath() + "/Pictures/PartySync/" + groupName);
         if (folder.exists()) {
             File[] listOfFiles = folder.listFiles();
             ArrayList<String> imageNames = new ArrayList<>();
@@ -214,7 +215,7 @@ public class Utilities {
     }
 
     public static ArrayList<File> getAllDifferentImages(List<String> receivedFileNames) {
-        File folder = new File(Environment.getExternalStorageDirectory().getPath() + "/Pictures/partySync");
+        File folder = new File(Environment.getExternalStorageDirectory().getPath() + "/Pictures/PartySync/" + groupName);
         if (folder.exists()) {
             File[] listOfFiles = folder.listFiles();
 
@@ -240,14 +241,6 @@ public class Utilities {
         return new ArrayList<>();
     }
 
-    public static void setOwnServiceName(String serviceName) {
-        Utilities.serviceName = serviceName;
-    }
-
-    public static String getOwnServiceName() {
-        return serviceName;
-    }
-
     /**
      * Check if app name and group name are identical
      *
@@ -260,6 +253,23 @@ public class Utilities {
 
         return splitOwn[0].equals(splitForeign[0]) &&
                 splitOwn[2].equals(splitForeign[2]);
+    }
+
+
+    public static void setOwnServiceName(String serviceName) {
+        Utilities.serviceName = serviceName;
+    }
+
+    public static String getOwnServiceName() {
+        return serviceName;
+    }
+
+    public static String getGroupName() {
+        return groupName;
+    }
+
+    public static void setGroupName(String groupName) {
+        Utilities.groupName = groupName;
     }
 
     private static void sendBytes(byte[] myByteArray, int start, int len, OutputStream outputStream) throws IOException {

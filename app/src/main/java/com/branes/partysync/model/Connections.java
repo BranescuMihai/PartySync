@@ -111,6 +111,11 @@ public class Connections {
         return false;
     }
 
+    public boolean removeConnection(PeerConnection peerConnection) {
+        closeConnection(peerConnection);
+        return peerConnections.remove(peerConnection);
+    }
+
     /**
      * Remove a connection from the list if it exists, identified by socket
      *
@@ -135,7 +140,9 @@ public class Connections {
      */
     private void closeConnection(PeerConnection peerConnection) {
         try {
-            peerConnection.getSocket().close();
+            if (peerConnection.getSocket() != null) {
+                peerConnection.getSocket().close();
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }

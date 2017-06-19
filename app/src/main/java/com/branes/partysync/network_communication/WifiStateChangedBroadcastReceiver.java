@@ -7,6 +7,7 @@ import android.net.NetworkInfo;
 import android.os.Bundle;
 
 import com.branes.partysync.dependency_injection.DependencyInjection;
+import com.branes.partysync.helper.Utilities;
 
 import javax.inject.Inject;
 
@@ -31,7 +32,7 @@ public class WifiStateChangedBroadcastReceiver extends BroadcastReceiver {
         if (intent.getAction().equals("android.net.wifi.STATE_CHANGE")) {
             if (ni.getState().toString().equals("CONNECTED")) {
                 try {
-                    networkServiceManager.registerNetworkService(networkServiceManager.groupName);
+                    networkServiceManager.registerNetworkService(Utilities.getGroupName());
                 } catch (Exception e) {
                     e.printStackTrace();
                 }

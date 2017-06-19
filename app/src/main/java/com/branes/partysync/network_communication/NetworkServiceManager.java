@@ -31,8 +31,6 @@ public class NetworkServiceManager implements AuthenticationFailureActions,
 
     private static final String TAG = NetworkServiceManager.class.getName();
 
-    String groupName;
-
     private String serviceName;
     private PeerConnectionIncoming peerConnectionIncoming;
 
@@ -133,7 +131,7 @@ public class NetworkServiceManager implements AuthenticationFailureActions,
             return;
         }
 
-        this.groupName = groupName;
+        Utilities.setGroupName(groupName);
 
         Utilities.setOwnServiceName(Constants.SERVICE_NAME + Utilities.generateIdentifier(Constants.IDENTIFIER_LENGTH) +
                 groupName);
@@ -178,7 +176,7 @@ public class NetworkServiceManager implements AuthenticationFailureActions,
 
     private void startNetworkServiceDiscovery() {
         Log.v(TAG, "Start Network Service Discovery");
-        discoveryListener = new NsdServiceDiscoveryListener(nsdManager, serviceName, groupName, this);
+        discoveryListener = new NsdServiceDiscoveryListener(nsdManager, serviceName, Utilities.getGroupName(), this);
         nsdManager.discoverServices(Constants.SERVICE_TYPE, NsdManager.PROTOCOL_DNS_SD, discoveryListener);
     }
 

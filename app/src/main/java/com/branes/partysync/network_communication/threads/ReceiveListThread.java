@@ -59,6 +59,7 @@ public class ReceiveListThread extends Thread {
                             authInfo = readBytes(inputStream);
                         } catch (IOException e) {
                             e.printStackTrace();
+                            peerConnection.removeSelfFromConnectionList();
                             interrupt();
                         }
                         if (authInfo != null) {

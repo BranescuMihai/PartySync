@@ -73,7 +73,8 @@ public class IoUtilities {
      * @throws IOException
      */
     public static void createFileFromImage(String name, String time, byte[] content) throws IOException {
-        File photosDirectory = new File(Environment.getExternalStorageDirectory().getPath() + "/Pictures/partySync");
+        File photosDirectory = new File(Environment.getExternalStorageDirectory().getPath() + "/Pictures/PartySync/"
+                + Utilities.getGroupName());
         if (photosDirectory.exists() || photosDirectory.mkdirs()) {
 
             File pictureFile = new File(photosDirectory, name + "_" + time + ".jpg");

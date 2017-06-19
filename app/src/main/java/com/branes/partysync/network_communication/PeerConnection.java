@@ -179,15 +179,19 @@ public class PeerConnection {
     public void setConnectionDetails(String profileName, String profilePicture, String peerUniqueId, String foreignServiceName) {
         Log.d(TAG, "Auth finished with " + socket.getInetAddress() + ":" + socket.getPort() + "--" + socket.getLocalPort());
         if (Utilities.checkIfSameGroup(foreignServiceName)) {
+            ((NetworkServiceManager) authenticationFailureActions).getConnections()
+                    .checkForRedundantConnections(host, peerUniqueId);
             this.profileName = profileName;
             this.profilePicture = profilePicture;
             this.peerUniqueId = peerUniqueId;
             this.foreignServiceName = foreignServiceName;
-            ((NetworkServiceManager) authenticationFailureActions).getConnections()
-                    .checkForRedundantConnections(host, peerUniqueId);
         } else {
             stopThreads();
         }
+    }
+
+    public void removeSelfFromConnectionList() {
+        ((NetworkServiceManager) authenticationFailureActions).getConnections().removeConnection(this);
     }
 
     public void compareFiles(List<String> receivedFileNames) throws IOException {
